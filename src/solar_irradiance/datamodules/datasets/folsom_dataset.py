@@ -14,11 +14,12 @@ MAX_IRRADIANCE = 1466.0 # max irradiance in the dataset
 
 
 class FolsomDataset(Dataset):
-    def __init__(self,
-                 data_root: Path,
-                 images_list: List[Path],
-                 augmentations: Compose
-                 ):
+    def __init__(
+            self,
+            data_root: Path,
+            images_list: List[Path],
+            augmentations: Compose
+        ):
         self._data_root = data_root
         self._images_list = images_list
         self._augmentations = augmentations

@@ -28,13 +28,13 @@ def main(cfg: DictConfig):
         root_data_path=cfg.datamodule.data_path,
         augment=cfg.datamodule.augment,
         image_size=cfg.datamodule.image_size,
-        padded_image_size=cfg.datamodule.padded_image_size,
         image_mean=cfg.datamodule.image_mean,
         image_std=cfg.datamodule.image_std,
         batch_size=cfg.datamodule.batch_size,
         workers=cfg.datamodule.workers,
         number_of_splits=cfg.datamodule.number_of_splits,
         current_split=cfg.datamodule.current_split,
+        seed=cfg.seed,
     )
 
     model = Regressor(
