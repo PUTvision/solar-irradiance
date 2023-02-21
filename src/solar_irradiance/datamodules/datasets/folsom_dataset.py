@@ -22,7 +22,7 @@ class FolsomDataset(Dataset):
         self._data_root = data_root
         self._images_list = images_list
         self._augmentations = augmentations
-        self._df = pd.read_csv(self._data_root / 'folsom_global_irradiance.csv', dtype={'date': str, 'irradiance': float}, index_col='date')
+        self._df = pd.read_csv(self._data_root / 'irradiance.csv', dtype={'date': str, 'irradiance': float}, index_col='date')
 
     def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor]:
         image, irradiance = self._load_data(index)

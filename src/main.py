@@ -20,8 +20,8 @@ from solar_irradiance.utils import utils
 log = utils.get_logger(__name__)
 
 
-@hydra.main(version_base=None, config_path='../config/', config_name='config')
-def main(cfg: DictConfig) -> None:
+@hydra.main(config_path='../config/', config_name='config')
+def main(cfg: DictConfig):
     pl.seed_everything(seed=cfg.seed)
 
     datamodule = RegressionDataModule(
@@ -55,21 +55,21 @@ def main(cfg: DictConfig) -> None:
     early_stopping_callback = EarlyStopping(**cfg.callbacks.early_stopping)
     lr_monitor = LearningRateMonitor(logging_interval='step')
 
+    callbacks = [
+        checkpoint_callback,
+        model_summary_callback,
+        early_stopping_callback,
+    ]
+
     if not cfg.debug:
         logger = NeptuneLogger(
             api_key=os.environ['NEPTUNE_API_TOKEN'],
             project='Vision/IrradianceRegression',
             log_model_checkpoints=True,
         )
+        callbacks.append(lr_monitor)
     else:
         logger = None
-
-    callbacks = [
-        checkpoint_callback,
-        model_summary_callback,
-        early_stopping_callback,
-        lr_monitor,
-    ]
 
     if cfg.trainer.devices > 0:
         ddp_strategy = DDPStrategy(
@@ -93,17 +93,21 @@ def main(cfg: DictConfig) -> None:
     )
 
     if not cfg.test_only:
+        log.info('Starting training process')
         trainer.fit(model, datamodule)
 
-        trainer.predict(model, datamodule, ckpt_path='best')
+        log.info('Starting testing process for the best checkpoint')
+        trainer.test(model, datamodule, ckpt_path='best')
+        log.info(f'Best model checkpoint: {trainer.checkpoint_callback.best_model_path}')
     else:
         assert cfg.restore_from_ckpt is not None
-        trainer.predict(model, datamodule, return_predictions=False)
+        log.info(f'Starting testing process for {cfg.restore_from_ckpt} checkpoint')
+        trainer.test(model, datamodule, ckpt_path=cfg.restore_from_ckpt)
 
     if cfg.export.export_to_onnx:
         opset = cfg.export.opset
         use_simplifier = cfg.export.use_simplifier
-        log.info(f'Exporting model to onnx! Params: opset={opset}, use_simplifier={use_simplifier}')
+        log.info(f'Exporting model to onnx with parameters: opset={opset}, use_simplifier={use_simplifier}')
 
         model.eval()
         x = next(iter(datamodule.test_dataloader()))[0][:1]

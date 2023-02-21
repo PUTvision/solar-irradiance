@@ -36,12 +36,12 @@ model:
 datamodule:
   data_path: ${work_dir}/data/Folsom
   augment: True
-  image_size: [768, 768]
-  padded_image_size: [768, 768]
+  image_size: [384, 384]
+  padded_image_size: [384, 384]
   image_mean: [0.485, 0.456, 0.406]
   image_std: [0.229, 0.224, 0.225]
   batch_size: 128
-  workers: 8
+  workers: 12
   number_of_splits: 5
   current_split: 0
 
@@ -53,7 +53,7 @@ callbacks:
     save_top_k: 1 # save k best models (determined by above metric)
     save_last: False # additionally, always save model from last epoch
     verbose: True
-    dirpath: "outputs/checkpoints/"
+    dirpath: "checkpoints/"
     filename: "epoch_{epoch:03d}"
     auto_insert_metric_name: False
   early_stopping:

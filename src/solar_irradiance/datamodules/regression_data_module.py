@@ -12,7 +12,9 @@ from pytorch_lightning import LightningDataModule
 from torch.utils.data import DataLoader, Dataset
 
 from solar_irradiance.datamodules.datasets.folsom_dataset import FolsomDataset
-from solar_irradiance.datamodules.datasets.sirta_dataset import SIRTADataset
+from solar_irradiance.utils import utils
+
+log = utils.get_logger(__name__)
 
 
 class RegressionDataModule(LightningDataModule):
@@ -41,10 +43,10 @@ class RegressionDataModule(LightningDataModule):
 
         if self._dataset_name == 'Folsom':
             self._dataset = FolsomDataset
-        elif self._dataset_name == 'SIRTA':
-            self._dataset = SIRTADataset
         else:
             raise ValueError(f'Dataset "{self._dataset_name}" not supported.')
+
+        log.info(f'Using {self._dataset_name} dataset and data from {self._data_root} directory.')
 
         self._train_dataset = None
         self._valid_dataset = None
@@ -77,7 +79,7 @@ class RegressionDataModule(LightningDataModule):
         with open(self._data_root / 'skip_images.txt', 'r') as f:
             skip_image_list = f.read().splitlines()
 
-        sequences_names = sorted([path for path in (self._data_root / 'images').rglob('*_01.jpg') if path.name not in skip_image_list])
+        sequences_names = sorted([path for path in (self._data_root / 'images/2015').rglob('*.jpg') if path.name not in skip_image_list])
 
         if 'train' in sequences_names or 'test' in sequences_names or 'valid' in sequences_names:
             sequences_names = sorted([cat.name + '/' + sequence_path.name for cat in self._data_root.glob('*')
@@ -105,6 +107,10 @@ class RegressionDataModule(LightningDataModule):
         splits = self.prepare_splits()
 
         train_split, valid_split, test_split = self.get_train_valid_test(splits, self._current_split)
+
+        log.info(f'Training samples: {len(train_split)}')
+        log.info(f'Validation samples: {len(valid_split)}')
+        log.info(f'Test samples: {len(test_split)}')
        
         self._train_dataset = self._dataset(
             data_root=self._data_root,
@@ -118,7 +124,7 @@ class RegressionDataModule(LightningDataModule):
             augmentations=self._transforms,
         )
 
-        self._train_dataset = self._dataset(
+        self._test_dataset = self._dataset(
             data_root=self._data_root,
             images_list=test_split,
             augmentations=self._transforms,
