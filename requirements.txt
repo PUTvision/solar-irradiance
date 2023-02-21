@@ -10,7 +10,7 @@ hydra-colorlog==1.2.0
 hydra-optuna-sweeper==1.2.0
 
 # --------- loggers --------- #
-neptune-client==0.16.3
+neptune-client
 
 # --------- export --------- #
 onnx
@@ -30,6 +30,6 @@ scikit-learn    # used in some callbacks
 jupyterlab      # better jupyter notebooks
 opencv-contrib-python # image processing library
 albumentations  # Fast image augmentation library
-segmentation_models_pytorch # Segmentation models
+timm            # Segmentation models
 monai           # Metrics and losses for segmentaion task
 pandas          # Data analysis, csv data loading
