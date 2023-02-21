@@ -29,14 +29,15 @@
 
 </div>
 
-The data is stored in the `data` directory. The `data` directory is structured as shown below. Note that the `irradiance.csv` file is only present in the `Folsom` and `SIRTA` datasets and contains the irradiance values for each image. Whereas the `HYTA` and `SWINySEG` datasets contain the masks for each image in the `masks` directory.
+The data is stored in the `data` directory. The `data` directory is structured as shown below. Note that the `irradiance.csv` file is only present in the `Folsom` and `SIRTA` datasets and contains the irradiance values for each image. Whereas the `HYTA` and `SWINySEG` datasets contain the masks for each image in the `masks` directory. The `skip_images.txt` file contains the names of the images that should be skipped during training and evaluation due to the lack of ground-truth irradiance, mask or file corruption.
 
 ```console
 ├── data
 │   └── <DATASET NAME>
 │       ├── images
 │       ├── masks
-|       └── irradiance.csv
+|       ├── irradiance.csv
+|       └── skip_images.txt
 ```
 
 ## Project Structure
@@ -44,7 +45,7 @@ The data is stored in the `data` directory. The `data` directory is structured a
 ```console
 ├── config
 ├── data
-├── scripts
+├── outputs
 ├── src
 |   └── solar_irradiance
 │       ├── datamodules
@@ -58,3 +59,21 @@ The data is stored in the `data` directory. The `data` directory is structured a
 ```
 
 ## Usage
+
+* train
+
+```shell
+HYDRA_FULL_ERROR=1 python src/main.py --config-name regressor
+```
+
+* evaluate
+
+```shell
+HYDRA_FULL_ERROR=1 python src/main.py --config-name regressor test_only=true restore_from_ckpt=/home/path/to/checkpoint.ckpt
+```
+
+* export
+
+```shell
+HYDRA_FULL_ERROR=1 python src/main.py --config-name regressor test_only=true restore_from_ckpt=/home/path/to/checkpoint.ckpt export.export_to_onnx=true
+```

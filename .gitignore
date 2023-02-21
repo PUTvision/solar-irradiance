@@ -329,3 +329,7 @@ poetry.toml
 .ionide
 
 # End of https://www.toptal.com/developers/gitignore/api/python,visualstudiocode,pycharm,linux,jupyternotebooks
+
+# Filter out datasets files and output checkpoints
+data/*
+outputs/*
