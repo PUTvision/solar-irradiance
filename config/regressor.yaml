@@ -27,23 +27,10 @@ trainer:
 #### MODEL ####
 model:
   model_name: resnet10t
-  input_channels: 3
+  input_channels: 4
   loss_function: MAE
   lr: 3e-4
   lr_patience: 5
-
-#### DATA ####
-datamodule:
-  data_path: ${work_dir}/data/Folsom
-  augment: True
-  image_size: [384, 384]
-  padded_image_size: [384, 384]
-  image_mean: [0.485, 0.456, 0.406]
-  image_std: [0.229, 0.224, 0.225]
-  batch_size: 128
-  workers: 12
-  number_of_splits: 5
-  current_split: 0
 
 #### CALLBACKS ####
 callbacks:
@@ -61,3 +48,17 @@ callbacks:
     mode: "min" # can be "max" or "min"
     patience: 10 # how many validation epochs of not improving until training stops
     min_delta: 0 # minimum change in the monitored metric needed to qualify as an improvement
+
+#### DATA ####
+datamodule:
+  data_path: ${work_dir}/data/Folsom
+  augment: True
+  image_size: [384, 384]
+  image_mean: [0.485, 0.456, 0.406]
+  image_std: [0.229, 0.224, 0.225]
+  batch_size: 128
+  workers: 12
+  number_of_splits: 5
+  current_split: 0
+  sun_mask: True
+  blur_mask: False

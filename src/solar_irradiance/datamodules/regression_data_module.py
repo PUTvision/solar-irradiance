@@ -5,8 +5,6 @@ from random import Random
 from typing import Optional, List, Tuple
 
 import albumentations as A
-from albumentations.pytorch import ToTensorV2
-import cv2
 from pytorch_lightning import LightningDataModule
 from torch.utils.data import DataLoader
 
@@ -28,6 +26,8 @@ class RegressionDataModule(LightningDataModule):
             workers: int,
             number_of_splits: int,
             current_split: int,
+            sun_mask: bool,
+            blur_mask: bool,
             seed: int,
         ):
         super().__init__()
@@ -39,6 +39,8 @@ class RegressionDataModule(LightningDataModule):
         self._workers = workers
         self._number_of_splits = number_of_splits
         self._current_split = current_split
+        self._sun_mask = sun_mask
+        self._blur_mask = blur_mask
         self._seed = seed
 
         if self._dataset_name == 'Folsom':
@@ -55,7 +57,6 @@ class RegressionDataModule(LightningDataModule):
         self._transforms = A.Compose([
             A.CenterCrop(image_size[1], image_size[0]),
             A.Normalize(mean=image_mean, std=image_std),
-            ToTensorV2()
         ])
 
         self._augmentations = A.Compose([
@@ -65,7 +66,6 @@ class RegressionDataModule(LightningDataModule):
             # transforms
             A.RandomCrop(image_size[1], image_size[0]),
             A.Normalize(mean=image_mean, std=image_std),
-            ToTensorV2()
         ])
 
     def prepare_splits(self) -> List[List[str]]:
@@ -109,18 +109,24 @@ class RegressionDataModule(LightningDataModule):
             data_root=self._data_root,
             images_list=train_split,
             augmentations=self._augmentations if self._augment else self._transforms,
+            sun_mask=self._sun_mask,
+            blur_mask=self._blur_mask,
         )
 
         self._valid_dataset = self._dataset(
             data_root=self._data_root,
             images_list=valid_split,
             augmentations=self._transforms,
+            sun_mask=self._sun_mask,
+            blur_mask=self._blur_mask,
         )
 
         self._test_dataset = self._dataset(
             data_root=self._data_root,
             images_list=test_split,
             augmentations=self._transforms,
+            sun_mask=self._sun_mask,
+            blur_mask=self._blur_mask,
         )
 
     def train_dataloader(self):
