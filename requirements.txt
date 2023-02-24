@@ -33,3 +33,4 @@ albumentations  # Fast image augmentation library
 timm            # Segmentation models
 monai           # Metrics and losses for segmentaion task
 pandas          # Data analysis, csv data loading
+pvlib           # Sun mask generation

@@ -5,11 +5,8 @@ from random import Random
 from typing import Optional, List, Tuple
 
 import albumentations as A
-from albumentations.pytorch import ToTensorV2
-import cv2
-import hydra
 from pytorch_lightning import LightningDataModule
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader
 
 from solar_irradiance.datamodules.datasets.folsom_dataset import FolsomDataset
 from solar_irradiance.utils import utils
@@ -23,13 +20,15 @@ class RegressionDataModule(LightningDataModule):
             root_data_path: Path,
             augment: bool,
             image_size: Tuple[int, int],
-            padded_image_size: Tuple[int, int],
             image_mean: Tuple[float, float, float],
             image_std: Tuple[float, float, float],
             batch_size: int,
             workers: int,
             number_of_splits: int,
             current_split: int,
+            sun_mask: bool,
+            blur_mask: bool,
+            seed: int,
         ):
         super().__init__()
 
@@ -40,6 +39,9 @@ class RegressionDataModule(LightningDataModule):
         self._workers = workers
         self._number_of_splits = number_of_splits
         self._current_split = current_split
+        self._sun_mask = sun_mask
+        self._blur_mask = blur_mask
+        self._seed = seed
 
         if self._dataset_name == 'Folsom':
             self._dataset = FolsomDataset
@@ -54,25 +56,16 @@ class RegressionDataModule(LightningDataModule):
 
         self._transforms = A.Compose([
             A.CenterCrop(image_size[1], image_size[0]),
-            A.PadIfNeeded(padded_image_size[1], padded_image_size[0], border_mode=cv2.BORDER_CONSTANT, value=0),
             A.Normalize(mean=image_mean, std=image_std),
-            ToTensorV2()
         ])
 
         self._augmentations = A.Compose([
-            # rgb augmentations
-            # A.RandomSunFlare(),
-            # A.RandomGamma(gamma_limit=(80, 120)),
-            # A.ColorJitter(brightness=0.1, contrast=0.1, hue=0.01, saturation=0.5),
-            # A.ISONoise(color_shift=(0.01, 0.1)),
             # geometry augmentations
             A.Affine(rotate=(-10, 10), translate_px=(-10, 10), scale=(0.9, 1.1)),
             A.HorizontalFlip(),
             # transforms
             A.RandomCrop(image_size[1], image_size[0]),
-            A.PadIfNeeded(padded_image_size[1], padded_image_size[0], border_mode=cv2.BORDER_CONSTANT, value=0),
             A.Normalize(mean=image_mean, std=image_std),
-            ToTensorV2()
         ])
 
     def prepare_splits(self) -> List[List[str]]:
@@ -86,13 +79,13 @@ class RegressionDataModule(LightningDataModule):
                                       for sequence_path in cat.glob('*')
                                       if not sequence_path.name.startswith('.')])
 
-        splits = self.partition_sequences(sequences_names, self._number_of_splits)
+        splits = self.partition_sequences(sequences_names, self._number_of_splits, self._seed)
         return splits
 
     @staticmethod
-    def partition_sequences(sequences: List[str], n: int) -> List[List[str]]:
+    def partition_sequences(sequences: List[str], n: int, seed: int) -> List[List[str]]:
         sequences = sequences.copy()
-        Random(42).shuffle(sequences)
+        Random(seed).shuffle(sequences)
         return [sequences[i::n] for i in range(n)]
 
     @staticmethod
@@ -116,18 +109,24 @@ class RegressionDataModule(LightningDataModule):
             data_root=self._data_root,
             images_list=train_split,
             augmentations=self._augmentations if self._augment else self._transforms,
+            sun_mask=self._sun_mask,
+            blur_mask=self._blur_mask,
         )
 
         self._valid_dataset = self._dataset(
             data_root=self._data_root,
             images_list=valid_split,
             augmentations=self._transforms,
+            sun_mask=self._sun_mask,
+            blur_mask=self._blur_mask,
         )
 
         self._test_dataset = self._dataset(
             data_root=self._data_root,
             images_list=test_split,
             augmentations=self._transforms,
+            sun_mask=self._sun_mask,
+            blur_mask=self._blur_mask,
         )
 
     def train_dataloader(self):
