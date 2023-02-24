@@ -39,6 +39,8 @@ class SunMask:
         if self._blur_mask:
             mask = gaussian_filter(mask, sigma=9)
 
+        mask = (mask / 255).astype(np.float32)
+
         return np.concatenate([image, mask], axis=2)
 
     def _calculate_sun_center_in_image(
@@ -68,4 +70,4 @@ class SunMask:
         y_scp = image_size[0] / 2 + y_sc * image_size[0]/2
         
         return int(x_scp), int(y_scp)
-    
+
