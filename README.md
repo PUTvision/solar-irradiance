@@ -20,12 +20,13 @@
 
 <div align="center">
 
-|           **Task**           |                        **Dataset**                       |             **Samples**             | **Description** |
-|:----------------------------:|:--------------------------------------------------------:|:-----------------------------------:|:---------------:|
-| Solar Irradiance  Regression |        [Folsom](https://zenodo.org/record/2826939)       |   3 years  (sampled every minute)   |                 |
-| Solar Irradiance  Regression |       [SIRTA](https://sirta.ipsl.fr/data-overview/)      | 8 years  (sampled every two minute) |                 |
-|      Cloud Segmentation      | [SWINySEG](http://vintage.winklerbros.net/swinyseg.html) |                 6768                |                 |
-|      Cloud Segmentation      |        [HYTA](https://github.com/Soumyabrata/HYTA)       |                  32                 |                 |
+|           **Task**          |                        **Dataset**                       |             **Samples**             | **Description** |
+|:---------------------------:|:--------------------------------------------------------:|:-----------------------------------:|:---------------:|
+| Solar Irradiance Regression |        [Folsom](https://zenodo.org/record/2826939)       |   3 years  (sampled every minute)   |                 |
+| Solar Irradiance Regression |       [SIRTA](https://sirta.ipsl.fr/data-overview/)      | 8 years  (sampled every two minute) |                 |
+| Solar Irradiance Regression | [Girasol](https://datadryad.org/stash/dataset/doi%253A10.5061%252Fdryad.zcrjdfn9m) | 244 individual days from 3 years period | |
+|      Cloud Segmentation     | [SWINySEG](http://vintage.winklerbros.net/swinyseg.html) |                 6768                |                 |
+|      Cloud Segmentation     |        [HYTA](https://github.com/Soumyabrata/HYTA)       |                  32                 |                 |
 
 </div>
 
