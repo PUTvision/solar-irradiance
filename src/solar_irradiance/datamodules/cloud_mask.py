@@ -22,7 +22,7 @@ class CloudMask:
     def __call__(self, image: np.ndarray) -> np.ndarray:
         mask = self.segmentation_func(image[..., :3])
 
-        return np.concatenate([image, mask], axis=2)
+        return np.concatenate([image, mask[..., np.newaxis]], axis=2)
     
     def l2_distance(self, x_idx, y_idx) -> float:
         return np.sqrt((self.shape[1]//2 - x_idx)**2 + (self.shape[0]//2 - y_idx)**2)

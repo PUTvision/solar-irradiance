@@ -96,6 +96,16 @@ def main(cfg: DictConfig):
         check_val_every_n_epoch=1,
     )
 
+    log.info('Logging hyperparameters!')
+    utils.log_hyperparameters(
+        config=cfg,
+        model=model,
+        datamodule=datamodule,
+        trainer=trainer,
+        callbacks=callbacks,
+        logger=logger,
+    )
+
     if not cfg.test_only:
         log.info('Starting training process')
         trainer.fit(model, datamodule)
