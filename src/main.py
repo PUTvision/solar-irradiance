@@ -35,6 +35,8 @@ def main(cfg: DictConfig):
         number_of_splits=cfg.datamodule.number_of_splits,
         current_split=cfg.datamodule.current_split,
         sun_mask=cfg.datamodule.sun_mask,
+        cloud_mask=cfg.datamodule.cloud_mask,
+        cloud_mask_method=cfg.datamodule.cloud_mask_method,
         blur_mask=cfg.datamodule.blur_mask,
         seed=cfg.seed,
     )

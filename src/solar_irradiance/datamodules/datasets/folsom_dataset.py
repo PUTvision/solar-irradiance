@@ -9,6 +9,7 @@ from albumentations import Compose
 from torch.utils.data import Dataset
 
 from solar_irradiance.datamodules.sun_mask import SunMask
+from solar_irradiance.datamodules.cloud_mask import CloudMask
 
 
 MAX_IRRADIANCE = 1466.0 # max irradiance in the dataset
@@ -27,7 +28,10 @@ class FolsomDataset(Dataset):
             images_list: List[Path],
             augmentations: Compose,
             sun_mask: bool,
+            cloud_mask: bool,
+            cloud_mask_method: str,
             blur_mask: bool,
+            shape: tuple[int, int],
         ):
         self._data_root = data_root
         self._images_list = images_list
@@ -35,6 +39,8 @@ class FolsomDataset(Dataset):
         self._df = pd.read_csv(self._data_root / 'irradiance.csv', dtype={'date': str, 'irradiance': float}, index_col='date')
         self._sun_mask_enabled = sun_mask
         self._sun_mask = SunMask(self.latitude, self.longitude, self.camera_orientation_compensation, self.focal_length, blur_mask=blur_mask)
+        self._cloud_mask_enabled = cloud_mask
+        self._cloud_mask = CloudMask(shape=shape, method=cloud_mask_method)
 
     def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor]:
         image_path = self._images_list[index]
@@ -45,6 +51,8 @@ class FolsomDataset(Dataset):
 
         if self._sun_mask_enabled:
             image = self._sun_mask(image=image, timestamp=image_path.name[:15])
+        if self._cloud_mask_enabled:
+            image = self._cloud_mask(image=image)
 
         irradiance /= MAX_IRRADIANCE
         irradiance = irradiance if irradiance >= 0.0 else 0.0
