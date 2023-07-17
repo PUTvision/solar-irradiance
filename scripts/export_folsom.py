@@ -1,16 +1,22 @@
 import pickle
+from pathlib import Path
 
+import click
 import pandas as pd
 from tqdm import tqdm
 
 
-def main():
-    history_size = 3
-    time_window = 5 + history_size
+@click.command()
+@click.option('--cleaned-dataframe-path', type=click.Path(exists=True, path_type=Path), required=True)
+@click.option('--history-size', type=int, required=True)
+@click.option('--time-window', type=int, required=True)
+@click.option('--output-path', type=click.Path(path_type=Path), required=True)
+def export_folsom(cleaned_dataframe_path: Path, history_size: int, time_window: int, output_path: Path):
+    time_window += history_size
 
     periods = []
 
-    df = pd.read_csv('/home/dpieczynski/Datasets/Folsom/cleaned_irradiance.csv', parse_dates=['datetime'],
+    df = pd.read_csv(cleaned_dataframe_path, parse_dates=['datetime'],
                      index_col='datetime')
 
     print(f'Min irradiance: {df["irradiance"].min()}')
@@ -39,9 +45,9 @@ def main():
             })
 
     print(f'Number of periods: {len(periods)}')
-    with open('/home/dpieczynski/Datasets/Folsom/periods.pickle', 'wb') as f:
+    with output_path.open('wb') as f:
         pickle.dump(periods, f)
 
 
 if __name__ == '__main__':
-    main()
+    export_folsom()

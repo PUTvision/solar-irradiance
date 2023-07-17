@@ -1,0 +1,7 @@
+[core]
+    remote = chmura
+    autostage = true
+['remote "chmura"']
+    url = webdavs://chmura.put.poznan.pl/public.php/webdav
+    user = f4YwIAnW2bhE80K
+    password = "pupibpuy!MQkjPBDYW5@@cVw*t6i2t!#*r9&hbh"

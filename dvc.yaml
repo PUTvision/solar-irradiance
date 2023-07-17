@@ -1,0 +1,39 @@
+vars:
+  - data_root: data/Folsom
+
+stages:
+  clean_dataframe:
+    cmd: python ${clean_dataframe.script_path}
+         --data-root ${data_root}
+         --output-path ${clean_dataframe.output_path}
+    deps:
+      - ${clean_dataframe.script_path}
+      - ${data_root}
+    outs:
+      - ${clean_dataframe.output_path}
+
+  export_periods:
+    cmd: python ${export_periods.script_path}
+         --cleaned-dataframe-path ${clean_dataframe.output_path}
+         --time-window ${export_periods.time_window}
+         --history-size ${export_periods.history_size}
+         --output-path ${export_periods.output_path}
+    deps:
+      - ${export_periods.script_path}
+      - ${clean_dataframe.output_path}
+    params:
+      - export_periods.time_window
+      - export_periods.history_size
+    outs:
+      - ${export_periods.output_path}
+
+  train_forecaster:
+    cmd: python ${train_forecaster.script_path}
+         --data-root ${data_root}
+         --periods-path ${export_periods.output_path}
+    deps:
+      - ${train_forecaster.script_path}
+      - ${data_root}
+      - ${export_periods.output_path}
+    params:
+      - train_forecaster

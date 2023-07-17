@@ -14,6 +14,7 @@ class ForecastingDataModule(LightningDataModule):
     def __init__(
             self,
             root_data_path: Path,
+            periods_path: Path,
             augment: bool,
             image_size: Tuple[int, int],
             image_mean: Tuple[float, float, float],
@@ -27,6 +28,7 @@ class ForecastingDataModule(LightningDataModule):
         super().__init__()
 
         self._data_root = Path(root_data_path)
+        self._periods_path = Path(periods_path)
         self._dataset_name = self._data_root.name
         self._augment = augment
         self._batch_size = batch_size
@@ -53,7 +55,7 @@ class ForecastingDataModule(LightningDataModule):
         self._test_dataset = None
 
     def setup(self, stage: str) -> None:
-        with (self._data_root / 'periods.pickle').open('rb') as f:
+        with self._periods_path.open('rb') as f:
             periods = pd.read_pickle(f)
 
         train_periods, val_periods = train_test_split(periods, test_size=0.2, random_state=self._seed)

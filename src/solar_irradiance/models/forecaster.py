@@ -24,8 +24,12 @@ class Forecaster(pl.LightningModule):
         self._lr_patience = lr_patience
 
         self.network = r3d_18(weights=R3D_18_Weights.DEFAULT, progress=True)
-        self.network.fc = torch.nn.Linear(512, 253)
-        self.network_head = torch.nn.Linear(256, 1)
+        self.network.fc = torch.nn.Identity()
+        self.network_head = torch.nn.Sequential(
+            torch.nn.Linear(515, 256),
+            torch.nn.ReLU(inplace=True),
+            torch.nn.Linear(256, 1),
+        )
 
         if loss_function == 'MSE':
             self.loss = torch.nn.MSELoss()

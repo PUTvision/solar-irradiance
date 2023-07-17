@@ -1,13 +1,15 @@
 import os
+from pathlib import Path
 
-import hydra
+import click
+import dvc.api
 import lightning.pytorch as pl
 import onnx
 import torch
 from lightning.pytorch.callbacks import ModelCheckpoint, ModelSummary, EarlyStopping, LearningRateMonitor
 from lightning.pytorch.loggers import NeptuneLogger
 from lightning.pytorch.strategies import DDPStrategy
-from omegaconf import DictConfig
+from omegaconf import OmegaConf
 from onnxsim import simplify
 from torch.distributed.algorithms.ddp_comm_hooks import (
     default_hooks as default,
@@ -20,12 +22,17 @@ from solar_irradiance.utils import utils
 log = utils.get_logger(__name__)
 
 
-@hydra.main(config_path='../config/', config_name='forecaster')
-def main(cfg: DictConfig):
+@click.command()
+@click.option('--data-root', type=click.Path(exists=True, path_type=Path), required=True)
+@click.option('--periods-path', type=click.Path(exists=True, path_type=Path), required=True)
+def train_forecaster(data_root: Path, periods_path: Path):
+    cfg = OmegaConf.create(dvc.api.params_show()['train_forecaster'])
+
     pl.seed_everything(seed=cfg.seed)
 
     datamodule = ForecastingDataModule(
-        root_data_path=cfg.datamodule.data_path,
+        root_data_path=data_root,
+        periods_path=periods_path,
         augment=cfg.datamodule.augment,
         image_size=cfg.datamodule.image_size,
         image_mean=cfg.datamodule.image_mean,
@@ -125,4 +132,4 @@ def main(cfg: DictConfig):
 
 
 if __name__ == '__main__':
-    main()
+    train_forecaster()
