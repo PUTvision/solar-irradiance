@@ -1,6 +1,6 @@
 from typing import Optional
 
-import pytorch_lightning as pl
+import lightning.pytorch as pl
 import torch
 import torchmetrics
 import timm

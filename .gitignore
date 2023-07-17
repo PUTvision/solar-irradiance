@@ -333,3 +333,6 @@ poetry.toml
 # Filter out datasets files and output checkpoints
 data/*
 outputs/*
+
+# PyCharm
+.idea/
