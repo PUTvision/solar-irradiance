@@ -1,7 +1,8 @@
 [core]
-    remote = chmura
+    remote = minio
     autostage = true
-['remote "chmura"']
-    url = webdavs://chmura.put.poznan.pl/public.php/webdav
-    user = f4YwIAnW2bhE80K
-    password = "pupibpuy!MQkjPBDYW5@@cVw*t6i2t!#*r9&hbh"
+['remote "minio"']
+    url = s3://dvc-solar-irradiance
+    endpointurl = http://10.8.8.52:9000
+    access_key_id = SSnXeRxbggA2HfvtnlO3
+    secret_access_key = obIfaxWSDIdecxZq9TO8OZxTgnolVB4TAAJ82EIC

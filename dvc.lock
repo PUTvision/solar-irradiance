@@ -2,44 +2,111 @@ schema: '2.0'
 stages:
   clean_dataframe:
     cmd: python scripts/prepare_dataframe.py --data-root data/Folsom --output-path
-      data/Folsom/cleaned_irradiance.csv
+      data/Prepared/cleaned_irradiance.csv
     deps:
-    - path: data/Folsom/images
+    - path: data/Folsom
       hash: md5
-      md5: 2fbdd704cd052c0ea31f62aa7e03f90a.dir
-      size: 64056782205
-      nfiles: 775916
-    - path: data/Folsom/irradiance.csv
-      hash: md5
-      md5: de62780ca1365dc5c70df370518f2de1
-      size: 43865492
+      md5: 1a067740695b101faef4ac7b7a6c721b.dir
+      size: 64100647697
+      nfiles: 775917
     - path: scripts/prepare_dataframe.py
       hash: md5
       md5: 2cfa55794fd4246ccbc565be563b820a
       size: 863
     outs:
-    - path: data/Folsom/cleaned_irradiance.csv
+    - path: data/Prepared/cleaned_irradiance.csv
       hash: md5
       md5: c44050c13a72e38ad3fed9d255870f0f
       size: 14883320
   export_periods:
-    cmd: python scripts/export_folsom.py --data-root data/Folsom --time-window 15
-      --history-size 3 --output-path data/Folsom/periods.pickle
+    cmd: python scripts/export_folsom.py --cleaned-dataframe-path data/Prepared/cleaned_irradiance.csv
+      --time-window 15 --history-size 3 --output-path data/Prepared/periods.pickle
     deps:
-    - path: data/Folsom/cleaned_irradiance.csv
+    - path: data/Prepared/cleaned_irradiance.csv
       hash: md5
       md5: c44050c13a72e38ad3fed9d255870f0f
       size: 14883320
     - path: scripts/export_folsom.py
       hash: md5
-      md5: 7f51525b0212bccae5d46fe38d4744b9
-      size: 2011
+      md5: 2c2abc9b2ace28a01a975f250df2fe60
+      size: 2023
     params:
       params.yaml:
         export_periods.history_size: 3
         export_periods.time_window: 15
     outs:
-    - path: data/Folsom/periods.pickle
+    - path: data/Prepared/periods.pickle
       hash: md5
       md5: 036a030ad1c057517cc40f5056b035d7
       size: 7965007
+  train_forecaster:
+    cmd: python scripts/train_forecaster.py --data-root data/Folsom --periods-path
+      data/Prepared/periods.pickle
+    deps:
+    - path: data/Folsom
+      hash: md5
+      md5: 1a067740695b101faef4ac7b7a6c721b.dir
+      size: 64100647697
+      nfiles: 775917
+    - path: data/Prepared/periods.pickle
+      hash: md5
+      md5: 036a030ad1c057517cc40f5056b035d7
+      size: 7965007
+    - path: scripts/train_forecaster.py
+      hash: md5
+      md5: 1efe85d09be346bdde445758e2d4a43d
+      size: 4795
+    params:
+      params.yaml:
+        train_forecaster:
+          script_path: scripts/train_forecaster.py
+          seed: 42
+          debug: false
+          test_only: false
+          restore_from_ckpt:
+          export:
+            export_to_onnx: false
+            opset: 15
+            use_simplifier: false
+          trainer:
+            devices: 1
+            precision: bf16-mixed
+            max_epochs: 1000
+          model:
+            model_name: r3d_18
+            input_channels: 3
+            loss_function: MAE
+            lr: 0.001
+            lr_patience: 5
+          callbacks:
+            model_checkpoint:
+              monitor: val_loss
+              mode: min
+              save_top_k: 1
+              save_last: false
+              verbose: true
+              dirpath: checkpoints/
+              filename: epoch_{epoch:03d}
+              auto_insert_metric_name: false
+            early_stopping:
+              monitor: val_loss
+              mode: min
+              patience: 20
+              min_delta: 0
+          datamodule:
+            augment: true
+            image_size:
+            - 384
+            - 384
+            image_mean:
+            - 0.43216
+            - 0.394666
+            - 0.3764
+            image_std:
+            - 0.22803
+            - 0.22145
+            - 0.21698
+            batch_size: 32
+            workers: 6
+            sun_mask: false
+            blur_mask: false
