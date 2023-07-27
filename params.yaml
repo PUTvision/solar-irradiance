@@ -32,15 +32,15 @@ train_forecaster:
   #### MODEL ####
   model:
     model_name: r3d_18
-    input_channels: 3
+    input_channels: 4
     loss_function: MAE
-    lr: 1e-3
+    lr: 3e-4
     lr_patience: 5
 
   #### CALLBACKS ####
   callbacks:
     model_checkpoint:
-      monitor: "val_loss" # name of the logged metric which determines when model is improving
+      monitor: "val_MeanAbsolutePercentageError" # name of the logged metric which determines when model is improving
       mode: "min" # can be "max" or "min"
       save_top_k: 1 # save k best models (determined by above metric)
       save_last: False # additionally, always save model from last epoch
@@ -49,18 +49,19 @@ train_forecaster:
       filename: "epoch_{epoch:03d}"
       auto_insert_metric_name: False
     early_stopping:
-      monitor: "val_loss" # name of the logged metric which determines when model is improving
+      monitor: "val_MeanAbsolutePercentageError" # name of the logged metric which determines when model is improving
       mode: "min" # can be "max" or "min"
       patience: 20 # how many validation epochs of not improving until training stops
       min_delta: 0 # minimum change in the monitored metric needed to qualify as an improvement
 
   #### DATA ####
   datamodule:
-    augment: True
+    augment: False
     image_size: [ 384, 384 ]
     image_mean: [ 0.43216, 0.394666, 0.3764 ]
     image_std: [ 0.22803, 0.22145, 0.21698 ]
-    batch_size: 32
+    batch_size: 16
     workers: 6
     sun_mask: False
     blur_mask: False
+    add_irradiance_channel: True

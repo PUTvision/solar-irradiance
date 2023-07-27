@@ -35,5 +35,6 @@ stages:
       - ${train_forecaster.script_path}
       - ${data_root}
       - ${export_periods.output_path}
+      - src/solar_irradiance/models/forecaster.py
     params:
       - train_forecaster

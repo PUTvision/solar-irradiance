@@ -54,8 +54,12 @@ stages:
       size: 7965007
     - path: scripts/train_forecaster.py
       hash: md5
-      md5: 1efe85d09be346bdde445758e2d4a43d
-      size: 4795
+      md5: 05eafd54576bfa78bf27a628fba79538
+      size: 5023
+    - path: src/solar_irradiance/models/forecaster.py
+      hash: md5
+      md5: fc1305b52d0315f1015ae9c2acd4dd53
+      size: 6082
     params:
       params.yaml:
         train_forecaster:
@@ -70,17 +74,17 @@ stages:
             use_simplifier: false
           trainer:
             devices: 1
-            precision: bf16-mixed
+            precision: 32
             max_epochs: 1000
           model:
             model_name: r3d_18
-            input_channels: 3
+            input_channels: 4
             loss_function: MAE
-            lr: 0.001
+            lr: 0.0003
             lr_patience: 5
           callbacks:
             model_checkpoint:
-              monitor: val_loss
+              monitor: val_MeanAbsolutePercentageError
               mode: min
               save_top_k: 1
               save_last: false
@@ -89,12 +93,12 @@ stages:
               filename: epoch_{epoch:03d}
               auto_insert_metric_name: false
             early_stopping:
-              monitor: val_loss
+              monitor: val_MeanAbsolutePercentageError
               mode: min
               patience: 20
               min_delta: 0
           datamodule:
-            augment: true
+            augment: false
             image_size:
             - 384
             - 384
@@ -106,7 +110,8 @@ stages:
             - 0.22803
             - 0.22145
             - 0.21698
-            batch_size: 32
+            batch_size: 16
             workers: 6
             sun_mask: false
             blur_mask: false
+            add_irradiance_channel: true

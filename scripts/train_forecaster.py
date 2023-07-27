@@ -26,6 +26,7 @@ log = utils.get_logger(__name__)
 @click.option('--data-root', type=click.Path(exists=True, path_type=Path), required=True)
 @click.option('--periods-path', type=click.Path(exists=True, path_type=Path), required=True)
 def train_forecaster(data_root: Path, periods_path: Path):
+    data_cfg = OmegaConf.create(dvc.api.params_show()['export_periods'])
     cfg = OmegaConf.create(dvc.api.params_show()['train_forecaster'])
 
     pl.seed_everything(seed=cfg.seed)
@@ -41,6 +42,7 @@ def train_forecaster(data_root: Path, periods_path: Path):
         workers=cfg.datamodule.workers,
         sun_mask=cfg.datamodule.sun_mask,
         blur_mask=cfg.datamodule.blur_mask,
+        add_irradiance_channel=cfg.datamodule.add_irradiance_channel,
         seed=cfg.seed,
     )
 
@@ -50,6 +52,8 @@ def train_forecaster(data_root: Path, periods_path: Path):
         loss_function=cfg.model.loss_function,
         lr=cfg.model.lr,
         lr_patience=cfg.model.lr_patience,
+        time_window=data_cfg.time_window,
+        history_size=data_cfg.history_size
     )
     model = torch.compile(model)
 

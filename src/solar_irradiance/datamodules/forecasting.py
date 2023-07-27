@@ -23,6 +23,7 @@ class ForecastingDataModule(LightningDataModule):
             workers: int,
             sun_mask: bool,
             blur_mask: bool,
+            add_irradiance_channel: bool,
             seed: int,
     ):
         super().__init__()
@@ -35,6 +36,7 @@ class ForecastingDataModule(LightningDataModule):
         self._workers = workers
         self._sun_mask = sun_mask
         self._blur_mask = blur_mask
+        self._add_irradiance_channel = add_irradiance_channel
         self._seed = seed
 
         self._transforms = A.ReplayCompose([
@@ -67,6 +69,7 @@ class ForecastingDataModule(LightningDataModule):
             transforms=self._augmentations if self._augment else self._transforms,
             sun_mask=self._sun_mask,
             blur_mask=self._blur_mask,
+            add_irradiance_channel=self._add_irradiance_channel,
         )
         self._val_dataset = FolsomForecastingDataset(
             data_root=self._data_root,
@@ -74,6 +77,7 @@ class ForecastingDataModule(LightningDataModule):
             transforms=self._transforms,
             sun_mask=self._sun_mask,
             blur_mask=self._blur_mask,
+            add_irradiance_channel=self._add_irradiance_channel,
         )
         self._test_dataset = FolsomForecastingDataset(
             data_root=self._data_root,
@@ -81,6 +85,7 @@ class ForecastingDataModule(LightningDataModule):
             transforms=self._transforms,
             sun_mask=self._sun_mask,
             blur_mask=self._blur_mask,
+            add_irradiance_channel=self._add_irradiance_channel,
         )
 
     def train_dataloader(self):

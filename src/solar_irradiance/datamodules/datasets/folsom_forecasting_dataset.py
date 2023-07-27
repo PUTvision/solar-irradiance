@@ -29,12 +29,14 @@ class FolsomForecastingDataset(Dataset):
             transforms: ReplayCompose,
             sun_mask: bool,
             blur_mask: bool,
+            add_irradiance_channel: bool,
     ):
         self._data_root = data_root
         self._periods = periods
         self._transforms = transforms
         self._sun_mask_enabled = sun_mask
         self._sun_mask = SunMask(self.latitude, self.longitude, self.camera_orientation_compensation, self.focal_length, blur_mask=blur_mask)
+        self._add_irradiance_channel = add_irradiance_channel
 
     def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         period = self._periods[index]
@@ -57,7 +59,11 @@ class FolsomForecastingDataset(Dataset):
             if self._sun_mask_enabled:
                 image = self._sun_mask(image=image, timestamp=image_path.name[:15])
 
-            source_images.append(torch.from_numpy(image).permute(2, 0, 1))
+            source_image = torch.from_numpy(image).permute(2, 0, 1)
+            if self._add_irradiance_channel:
+                source_image = torch.cat([source_image, torch.full((1, *source_image.shape[1:]), irradiance)], dim=0)
+
+            source_images.append(source_image)
             source_irradiances.append(irradiance)
 
         target_irradiance = period['target_irradiance'] / MAX_IRRADIANCE
