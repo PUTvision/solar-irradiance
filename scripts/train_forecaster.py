@@ -42,6 +42,7 @@ def train_forecaster(data_root: Path, periods_path: Path):
         workers=cfg.datamodule.workers,
         sun_mask=cfg.datamodule.sun_mask,
         add_irradiance_channel=cfg.datamodule.add_irradiance_channel,
+        optical_flow=cfg.datamodule.optical_flow,
         seed=cfg.seed,
     )
 

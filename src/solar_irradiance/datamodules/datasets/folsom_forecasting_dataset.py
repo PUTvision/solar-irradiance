@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Tuple, List, Dict, Any
+from typing import Tuple, List, Dict, Any, Union
 
 import cv2
 import numpy as np
@@ -17,6 +17,13 @@ IRRADIANCE_STD = 301.2625  # std irradiance in the dataset
 # MAX_IRRADIANCE = 1600.0 # max irradiance from Hukseflux pyranometer
 
 
+OPTICAL_FLOWS = {
+    'dis': cv2.DISOpticalFlow_create(preset=cv2.DISOPTICAL_FLOW_PRESET_FAST),
+    'farneback': cv2.optflow.createOptFlow_Farneback(),
+    'deepflow': cv2.optflow.createOptFlow_DeepFlow(),
+}
+
+
 class FolsomForecastingDataset(Dataset):
     latitude = 38.642,
     longitude = -121.148
@@ -30,6 +37,7 @@ class FolsomForecastingDataset(Dataset):
             transforms: ReplayCompose,
             sun_mask: bool,
             add_irradiance_channel: bool,
+            optical_flow: Union[None, str],
     ):
         self._data_root = data_root
         self._periods = periods
@@ -37,9 +45,7 @@ class FolsomForecastingDataset(Dataset):
         self._sun_mask_enabled = sun_mask
         self._sun_mask = SunMask(self.latitude, self.longitude, self.camera_orientation_compensation, self.focal_length)
         self._add_irradiance_channel = add_irradiance_channel
-        # self._of = cv2.DISOpticalFlow_create(preset=cv2.DISOPTICAL_FLOW_PRESET_FAST)
-        # self._of = cv2.optflow.createOptFlow_Farneback()
-        # self._of = cv2.optflow.createOptFlow_DeepFlow()
+        self._of = OPTICAL_FLOWS.get(optical_flow)
 
     def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         period = self._periods[index]
@@ -47,8 +53,8 @@ class FolsomForecastingDataset(Dataset):
         source_images = []
         source_irradiances = []
         replay_data = None
-        # flow = None
-        # prev_image_gray = None
+        flow = None
+        prev_image_gray = None
 
         for history_item in period['history']:
             image_path = self._data_root / 'images' / history_item['image_name']
@@ -63,16 +69,17 @@ class FolsomForecastingDataset(Dataset):
 
             image = transformed['image']
 
-            # image_gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-            # if prev_image_gray is None:
-            #     prev_image_gray = image_gray.copy()
+            if self._of is not None:
+                image_gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+                if prev_image_gray is None:
+                    prev_image_gray = image_gray.copy()
 
-            # try:
-            #     flow = self._of.calc(prev_image_gray, image_gray, flow)
-            # except:
-            #     flow = np.zeros((image.shape[0], image.shape[1], 2), dtype=np.uint8)
+                try:
+                    flow = self._of.calc(prev_image_gray, image_gray, flow)
+                except:
+                    flow = np.zeros((image.shape[0], image.shape[1], 2), dtype=np.uint8)
 
-            # prev_image_gray = image_gray
+                prev_image_gray = image_gray
 
             if self._sun_mask_enabled:
                 image = self._sun_mask(image=image, timestamp=image_path.name[:15])
@@ -81,7 +88,8 @@ class FolsomForecastingDataset(Dataset):
             if self._add_irradiance_channel:
                 source_image = torch.cat([source_image, torch.full((1, *source_image.shape[1:]), irradiance)], dim=0)
 
-            # source_image = torch.cat([source_image, torch.from_numpy(flow).permute(2, 0, 1)], dim=0)
+            if self._of is not None:
+                source_image = torch.cat([source_image, torch.from_numpy(flow).permute(2, 0, 1)], dim=0)
 
             source_images.append(source_image)
             source_irradiances.append(irradiance)

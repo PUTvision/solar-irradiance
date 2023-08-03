@@ -64,3 +64,4 @@ train_forecaster:
     workers: 8
     sun_mask: True
     add_irradiance_channel: True
+    optical_flow: null # available: null, dis, farneback, deepflow
