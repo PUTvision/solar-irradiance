@@ -1,0 +1,8 @@
+[core]
+    remote = minio
+    autostage = true
+['remote "minio"']
+    url = s3://dvc-solar-irradiance
+    endpointurl = http://10.8.8.52:9000
+    access_key_id = SSnXeRxbggA2HfvtnlO3
+    secret_access_key = obIfaxWSDIdecxZq9TO8OZxTgnolVB4TAAJ82EIC

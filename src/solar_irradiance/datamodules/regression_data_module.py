@@ -5,7 +5,7 @@ from random import Random
 from typing import Optional, List, Tuple
 
 import albumentations as A
-from pytorch_lightning import LightningDataModule
+from lightning import LightningDataModule
 from torch.utils.data import DataLoader
 
 from solar_irradiance.datamodules.datasets.folsom_dataset import FolsomDataset
@@ -29,7 +29,7 @@ class RegressionDataModule(LightningDataModule):
             sun_mask: bool,
             blur_mask: bool,
             seed: int,
-        ):
+    ):
         super().__init__()
 
         self._data_root = Path(root_data_path)
@@ -72,7 +72,8 @@ class RegressionDataModule(LightningDataModule):
         with open(self._data_root / 'skip_images.txt', 'r') as f:
             skip_image_list = f.read().splitlines()
 
-        sequences_names = sorted([path for path in (self._data_root / 'images/2015').rglob('*.jpg') if path.name not in skip_image_list])
+        sequences_names = sorted(
+            [path for path in (self._data_root / 'images/2015').rglob('*.jpg') if path.name not in skip_image_list])
 
         if 'train' in sequences_names or 'test' in sequences_names or 'valid' in sequences_names:
             sequences_names = sorted([cat.name + '/' + sequence_path.name for cat in self._data_root.glob('*')
@@ -104,7 +105,7 @@ class RegressionDataModule(LightningDataModule):
         log.info(f'Training samples: {len(train_split)}')
         log.info(f'Validation samples: {len(valid_split)}')
         log.info(f'Test samples: {len(test_split)}')
-       
+
         self._train_dataset = self._dataset(
             data_root=self._data_root,
             images_list=train_split,
@@ -146,4 +147,3 @@ class RegressionDataModule(LightningDataModule):
             self._test_dataset, batch_size=self._batch_size, num_workers=self._workers,
             pin_memory=True
         )
-

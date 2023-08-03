@@ -1,7 +1,10 @@
 from pathlib import Path
 from typing import Tuple, List, Dict, Any
 
+<<<<<<< HEAD
 import cv2
+=======
+>>>>>>> master
 import numpy as np
 import torch
 from PIL import Image

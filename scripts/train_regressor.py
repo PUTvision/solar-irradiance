@@ -2,13 +2,13 @@ import os
 
 import hydra
 import onnx
-import pytorch_lightning as pl
+import lightning.pytorch as pl
 import torch
 from onnxsim import simplify
 from omegaconf import DictConfig
-from pytorch_lightning.callbacks import ModelCheckpoint, ModelSummary, EarlyStopping, LearningRateMonitor
-from pytorch_lightning.loggers import NeptuneLogger
-from pytorch_lightning.strategies import DDPStrategy
+from lightning.pytorch.callbacks import ModelCheckpoint, ModelSummary, EarlyStopping, LearningRateMonitor
+from lightning.pytorch.loggers import NeptuneLogger
+from lightning.pytorch.strategies import DDPStrategy
 from torch.distributed.algorithms.ddp_comm_hooks import (
     default_hooks as default,
 )
@@ -46,6 +46,7 @@ def main(cfg: DictConfig):
         lr=cfg.model.lr,
         lr_patience=cfg.model.lr_patience,
     )
+    model = torch.compile(model)
 
     if cfg.restore_from_ckpt is not None:
         model = model.load_from_checkpoint(
