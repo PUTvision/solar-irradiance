@@ -41,7 +41,6 @@ def train_forecaster(data_root: Path, periods_path: Path):
         batch_size=cfg.datamodule.batch_size,
         workers=cfg.datamodule.workers,
         sun_mask=cfg.datamodule.sun_mask,
-        blur_mask=cfg.datamodule.blur_mask,
         add_irradiance_channel=cfg.datamodule.add_irradiance_channel,
         seed=cfg.seed,
     )

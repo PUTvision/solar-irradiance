@@ -22,7 +22,6 @@ class ForecastingDataModule(LightningDataModule):
             batch_size: int,
             workers: int,
             sun_mask: bool,
-            blur_mask: bool,
             add_irradiance_channel: bool,
             seed: int,
     ):
@@ -35,7 +34,6 @@ class ForecastingDataModule(LightningDataModule):
         self._batch_size = batch_size
         self._workers = workers
         self._sun_mask = sun_mask
-        self._blur_mask = blur_mask
         self._add_irradiance_channel = add_irradiance_channel
         self._seed = seed
 
@@ -68,7 +66,6 @@ class ForecastingDataModule(LightningDataModule):
             periods=train_periods,
             transforms=self._augmentations if self._augment else self._transforms,
             sun_mask=self._sun_mask,
-            blur_mask=self._blur_mask,
             add_irradiance_channel=self._add_irradiance_channel,
         )
         self._val_dataset = FolsomForecastingDataset(
@@ -76,7 +73,6 @@ class ForecastingDataModule(LightningDataModule):
             periods=val_periods,
             transforms=self._transforms,
             sun_mask=self._sun_mask,
-            blur_mask=self._blur_mask,
             add_irradiance_channel=self._add_irradiance_channel,
         )
         self._test_dataset = FolsomForecastingDataset(
@@ -84,7 +80,6 @@ class ForecastingDataModule(LightningDataModule):
             periods=test_periods,
             transforms=self._transforms,
             sun_mask=self._sun_mask,
-            blur_mask=self._blur_mask,
             add_irradiance_channel=self._add_irradiance_channel,
         )
 

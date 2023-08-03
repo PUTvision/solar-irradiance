@@ -61,4 +61,3 @@ datamodule:
   number_of_splits: 5
   current_split: 0
   sun_mask: True
-  blur_mask: False
