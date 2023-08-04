@@ -3,10 +3,14 @@ clean_dataframe:
   output_path: data/Prepared/cleaned_irradiance.csv
 
 export_periods:
-    script_path: scripts/export_folsom.py
-    time_window: 15
-    history_size: 3
-    output_path: data/Prepared/periods.pickle
+  script_path: scripts/export_folsom.py
+  time_window: 15
+  history_size: 3
+  output_path: data/Prepared/periods.pickle
+
+export_eval_periods:
+  script_path: scripts/export_eval_periods.py
+  output_path: data/Eval
 
 train_forecaster:
   script_path: scripts/train_forecaster.py
