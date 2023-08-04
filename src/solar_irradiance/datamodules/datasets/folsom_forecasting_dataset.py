@@ -72,7 +72,7 @@ class FolsomForecastingDataset(Dataset):
 
             if self._add_sun_mask:
                 sun_mask = self._sun_mask(image=image, timestamp=image_path.name[:15])
-                torch_image = torch.cat([torch_image, torch.unsqueeze(torch.from_numpy(sun_mask), dim=0)], dim=0)
+                torch_image = torch.cat([torch_image, torch.from_numpy(sun_mask).permute(2, 0, 1)], dim=0)
 
             if self._add_irradiance_channel:
                 if self._add_sun_mask:
