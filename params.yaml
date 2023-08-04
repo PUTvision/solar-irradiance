@@ -31,8 +31,7 @@ train_forecaster:
 
   #### MODEL ####
   model:
-    model_name: r3d_18
-    input_channels: 5
+    model_name: timm-resnet34
     loss_function: MAE
     lr: 3e-4
     lr_patience: 5
@@ -60,8 +59,8 @@ train_forecaster:
     image_size: [ 384, 384 ]
     image_mean: [ 0.43216, 0.394666, 0.3764 ]
     image_std: [ 0.22803, 0.22145, 0.21698 ]
-    batch_size: 16
-    workers: 8
+    batch_size: 64
+    workers: 24
     sun_mask: True
     add_irradiance_channel: True
     optical_flow: null # available: null, dis, farneback, deepflow

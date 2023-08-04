@@ -59,12 +59,12 @@ class Forecaster(pl.LightningModule):
         elif model_name.startswith('timm-'):
             self.network = timm.create_model(
                 model_name.replace('timm-', ''), 
-                pretrained=True,# if self._input_channels == 3 else False, 
+                pretrained=True,
                 num_classes=1,
                 in_chans=self._input_channels,
             )
             self.network_head = torch.nn.Sequential(
-                torch.nn.Linear(self.network.fc.in_features + 1, 256),
+                torch.nn.Linear(self.network.fc.in_features + 4, 256),
                 torch.nn.ReLU(inplace=True),
                 torch.nn.Linear(256, 1),
             )

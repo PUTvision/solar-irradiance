@@ -96,12 +96,12 @@ class FolsomForecastingDataset(Dataset):
 
         target_irradiance = period['target_irradiance'] / MAX_IRRADIANCE
 
-        return (torch.stack(source_images).permute(1, 0, 2, 3),
-                torch.Tensor(source_irradiances),
-                torch.Tensor([target_irradiance]))
-        # return (source_images[-1],
-        #         torch.Tensor(source_irradiances[-1:]),
-        #         torch.Tensor(target_irradiance))
+        return (
+            # torch.stack(source_images).permute(1, 0, 2, 3),
+            source_images[-1],
+            torch.Tensor(source_irradiances),
+            torch.Tensor([target_irradiance])
+        )
 
     def __len__(self) -> int:
         return len(self._periods)
