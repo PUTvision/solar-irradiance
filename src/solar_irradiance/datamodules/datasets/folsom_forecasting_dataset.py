@@ -35,14 +35,14 @@ class FolsomForecastingDataset(Dataset):
             data_root: Path,
             periods: List[Dict[str, Any]],
             transforms: ReplayCompose,
-            sun_mask: bool,
+            add_sun_mask: bool,
             add_irradiance_channel: bool,
             optical_flow: Union[None, str],
     ):
         self._data_root = data_root
         self._periods = periods
         self._transforms = transforms
-        self._sun_mask_enabled = sun_mask
+        self._add_sun_mask = add_sun_mask
         self._sun_mask = SunMask(self.latitude, self.longitude, self.camera_orientation_compensation, self.focal_length)
         self._add_irradiance_channel = add_irradiance_channel
         self._of = OPTICAL_FLOWS.get(optical_flow)
@@ -70,7 +70,7 @@ class FolsomForecastingDataset(Dataset):
             image = transformed['image']
             torch_image = torch.from_numpy(image).permute(2, 0, 1)
 
-            if self._sun_mask_enabled:
+            if self._add_sun_mask:
                 sun_mask = self._sun_mask(image=image, timestamp=image_path.name[:15])
                 torch_image = torch.cat([torch_image, torch.unsqueeze(torch.from_numpy(sun_mask), dim=0)], dim=0)
 

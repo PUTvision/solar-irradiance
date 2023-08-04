@@ -26,7 +26,7 @@ class RegressionDataModule(LightningDataModule):
             workers: int,
             number_of_splits: int,
             current_split: int,
-            sun_mask: bool,
+            add_sun_mask: bool,
             seed: int,
     ):
         super().__init__()
@@ -38,7 +38,7 @@ class RegressionDataModule(LightningDataModule):
         self._workers = workers
         self._number_of_splits = number_of_splits
         self._current_split = current_split
-        self._sun_mask = sun_mask
+        self._add_sun_mask = add_sun_mask
         self._seed = seed
 
         if self._dataset_name == 'Folsom':
@@ -108,21 +108,21 @@ class RegressionDataModule(LightningDataModule):
             data_root=self._data_root,
             images_list=train_split,
             augmentations=self._augmentations if self._augment else self._transforms,
-            sun_mask=self._sun_mask,
+            add_sun_mask=self._add_sun_mask,
         )
 
         self._valid_dataset = self._dataset(
             data_root=self._data_root,
             images_list=valid_split,
             augmentations=self._transforms,
-            sun_mask=self._sun_mask,
+            add_sun_mask=self._add_sun_mask,
         )
 
         self._test_dataset = self._dataset(
             data_root=self._data_root,
             images_list=test_split,
             augmentations=self._transforms,
-            sun_mask=self._sun_mask,
+            add_sun_mask=self._add_sun_mask,
         )
 
     def train_dataloader(self):

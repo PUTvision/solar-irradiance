@@ -61,6 +61,6 @@ train_forecaster:
     image_std: [ 0.22803, 0.22145, 0.21698 ]
     batch_size: 64
     workers: 24
-    sun_mask: True
+    add_sun_mask: True
     add_irradiance_channel: True
     optical_flow: null # available: null, dis, farneback, deepflow

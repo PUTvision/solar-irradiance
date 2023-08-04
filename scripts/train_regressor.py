@@ -34,7 +34,7 @@ def main(cfg: DictConfig):
         workers=cfg.datamodule.workers,
         number_of_splits=cfg.datamodule.number_of_splits,
         current_split=cfg.datamodule.current_split,
-        sun_mask=cfg.datamodule.sun_mask,
+        add_sun_mask=cfg.datamodule.add_sun_mask,
         seed=cfg.seed,
     )
 

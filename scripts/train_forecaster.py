@@ -38,14 +38,14 @@ def train_forecaster(data_root: Path, periods_path: Path):
         image_std=cfg.datamodule.image_std,
         batch_size=cfg.datamodule.batch_size,
         workers=cfg.datamodule.workers,
-        sun_mask=cfg.datamodule.sun_mask,
+        add_sun_mask=cfg.datamodule.add_sun_mask,
         add_irradiance_channel=cfg.datamodule.add_irradiance_channel,
         optical_flow=cfg.datamodule.optical_flow,
         seed=cfg.seed,
     )
 
     optical_flow_channels = 0 if cfg.datamodule.optical_flow is None else 2
-    input_channels = 3 + int(cfg.datamodule.sun_mask) + int(cfg.datamodule.add_irradiance_channel) + optical_flow_channels
+    input_channels = 3 + int(cfg.datamodule.add_sun_mask) + int(cfg.datamodule.add_irradiance_channel) + optical_flow_channels
     model = Forecaster(
         model_name=cfg.model.model_name,
         input_channels=input_channels,

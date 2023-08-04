@@ -112,5 +112,5 @@ stages:
             - 0.21698
             batch_size: 16
             workers: 6
-            sun_mask: false
+            add_sun_mask: false
             add_irradiance_channel: true

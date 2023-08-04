@@ -26,13 +26,13 @@ class FolsomDataset(Dataset):
             data_root: Path,
             images_list: List[Path],
             augmentations: Compose,
-            sun_mask: bool,
+            add_sun_mask: bool,
         ):
         self._data_root = data_root
         self._images_list = images_list
         self._augmentations = augmentations
         self._df = pd.read_csv(self._data_root / 'irradiance.csv', dtype={'date': str, 'irradiance': float}, index_col='date')
-        self._sun_mask_enabled = sun_mask
+        self._add_sun_mask = add_sun_mask
         self._sun_mask = SunMask(self.latitude, self.longitude, self.camera_orientation_compensation, self.focal_length)
 
     def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor]:
@@ -42,7 +42,7 @@ class FolsomDataset(Dataset):
         transformed = self._augmentations(image=image)
         image = transformed['image']
 
-        if self._sun_mask_enabled:
+        if self._add_sun_mask:
             image = self._sun_mask(image=image, timestamp=image_path.name[:15])
 
         irradiance /= MAX_IRRADIANCE

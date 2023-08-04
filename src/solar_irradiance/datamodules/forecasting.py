@@ -21,7 +21,7 @@ class ForecastingDataModule(LightningDataModule):
             image_std: Tuple[float, float, float],
             batch_size: int,
             workers: int,
-            sun_mask: bool,
+            add_sun_mask: bool,
             add_irradiance_channel: bool,
             optical_flow: Union[None, str],
             seed: int,
@@ -34,7 +34,7 @@ class ForecastingDataModule(LightningDataModule):
         self._augment = augment
         self._batch_size = batch_size
         self._workers = workers
-        self._sun_mask = sun_mask
+        self._add_sun_mask = add_sun_mask
         self._add_irradiance_channel = add_irradiance_channel
         self._optical_flow = optical_flow
         self._seed = seed
@@ -67,7 +67,7 @@ class ForecastingDataModule(LightningDataModule):
             data_root=self._data_root,
             periods=train_periods,
             transforms=self._augmentations if self._augment else self._transforms,
-            sun_mask=self._sun_mask,
+            add_sun_mask=self._add_sun_mask,
             add_irradiance_channel=self._add_irradiance_channel,
             optical_flow=self._optical_flow,
         )
@@ -75,7 +75,7 @@ class ForecastingDataModule(LightningDataModule):
             data_root=self._data_root,
             periods=val_periods,
             transforms=self._transforms,
-            sun_mask=self._sun_mask,
+            add_sun_mask=self._add_sun_mask,
             add_irradiance_channel=self._add_irradiance_channel,
             optical_flow=self._optical_flow,
         )
@@ -83,7 +83,7 @@ class ForecastingDataModule(LightningDataModule):
             data_root=self._data_root,
             periods=test_periods,
             transforms=self._transforms,
-            sun_mask=self._sun_mask,
+            add_sun_mask=self._add_sun_mask,
             add_irradiance_channel=self._add_irradiance_channel,
             optical_flow=self._optical_flow,
         )
