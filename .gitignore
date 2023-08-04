@@ -332,6 +332,11 @@ poetry.toml
 
 # Filter out output checkpoints
 outputs/*
+checkpoints/*
+lightning_logs/*
+
+# Neptune logger
+.neptune/*
 
 # PyCharm
 .idea/
