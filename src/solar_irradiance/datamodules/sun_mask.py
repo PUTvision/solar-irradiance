@@ -35,7 +35,7 @@ class SunMask:
 
         mask = (mask / 255).astype(np.float32)
 
-        return np.concatenate([image, mask], axis=2)
+        return mask
 
     def _calculate_sun_center_in_image(
             self,

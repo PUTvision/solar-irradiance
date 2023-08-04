@@ -11,9 +11,7 @@ from lightning.pytorch.loggers import NeptuneLogger
 from lightning.pytorch.strategies import DDPStrategy
 from omegaconf import OmegaConf
 from onnxsim import simplify
-from torch.distributed.algorithms.ddp_comm_hooks import (
-    default_hooks as default,
-)
+from torch.distributed.algorithms.ddp_comm_hooks import default_hooks as default
 
 from solar_irradiance.datamodules.forecasting import ForecastingDataModule
 from solar_irradiance.models.forecaster import Forecaster

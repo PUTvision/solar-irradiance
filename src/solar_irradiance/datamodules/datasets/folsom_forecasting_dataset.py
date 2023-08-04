@@ -68,6 +68,14 @@ class FolsomForecastingDataset(Dataset):
                 transformed = self._transforms.replay(replay_data, image=image)
 
             image = transformed['image']
+            torch_image = torch.from_numpy(image).permute(2, 0, 1)
+
+            if self._sun_mask_enabled:
+                sun_mask = self._sun_mask(image=image, timestamp=image_path.name[:15])
+                torch_image = torch.cat([torch_image, torch.unsqueeze(torch.from_numpy(sun_mask), dim=0)], dim=0)
+
+            if self._add_irradiance_channel:
+                torch_image = torch.cat([torch_image, torch.full((1, *torch_image.shape[1:]), irradiance)], dim=0)
 
             if self._of is not None:
                 image_gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
@@ -81,17 +89,9 @@ class FolsomForecastingDataset(Dataset):
 
                 prev_image_gray = image_gray
 
-            if self._sun_mask_enabled:
-                image = self._sun_mask(image=image, timestamp=image_path.name[:15])
+                torch_image = torch.cat([torch_image, torch.from_numpy(flow).permute(2, 0, 1)], dim=0)
 
-            source_image = torch.from_numpy(image).permute(2, 0, 1)
-            if self._add_irradiance_channel:
-                source_image = torch.cat([source_image, torch.full((1, *source_image.shape[1:]), irradiance)], dim=0)
-
-            if self._of is not None:
-                source_image = torch.cat([source_image, torch.from_numpy(flow).permute(2, 0, 1)], dim=0)
-
-            source_images.append(source_image)
+            source_images.append(torch_image)
             source_irradiances.append(irradiance)
 
         target_irradiance = period['target_irradiance'] / MAX_IRRADIANCE
