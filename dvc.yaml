@@ -35,9 +35,6 @@ stages:
     deps:
       - ${data_root}
       - ${export_periods.output_path}
-    params:
-      - export_periods.time_window
-      - export_periods.history_size
     outs:
       - ${export_eval_periods.output_path}
 
