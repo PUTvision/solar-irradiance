@@ -75,7 +75,10 @@ class FolsomForecastingDataset(Dataset):
                 torch_image = torch.cat([torch_image, torch.unsqueeze(torch.from_numpy(sun_mask), dim=0)], dim=0)
 
             if self._add_irradiance_channel:
-                torch_image = torch.cat([torch_image, torch.full((1, *torch_image.shape[1:]), irradiance)], dim=0)
+                if self._add_sun_mask:
+                    torch_image[-1] *= irradiance
+                else:
+                    torch_image = torch.cat([torch_image, torch.full((1, *torch_image.shape[1:]), irradiance)], dim=0)
 
             if self._of is not None:
                 image_gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)

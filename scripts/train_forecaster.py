@@ -44,8 +44,12 @@ def train_forecaster(data_root: Path, periods_path: Path):
         seed=cfg.seed,
     )
 
+    # 3 from RGB channels
+    # additional channel with sun position mask or irradiance value or their combination
+    # 2 channels from opttical flow (X, Y directions)
     optical_flow_channels = 0 if cfg.datamodule.optical_flow is None else 2
-    input_channels = 3 + int(cfg.datamodule.add_sun_mask) + int(cfg.datamodule.add_irradiance_channel) + optical_flow_channels
+    input_channels = 3 + int(cfg.datamodule.add_sun_mask or cfg.datamodule.add_irradiance_channel) + optical_flow_channels
+
     model = Forecaster(
         model_name=cfg.model.model_name,
         input_channels=input_channels,
