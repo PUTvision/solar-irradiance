@@ -340,3 +340,6 @@ lightning_logs/*
 
 # PyCharm
 .idea/
+
+# Jupyter Notebook
+notebooks/
