@@ -1,6 +1,7 @@
 from typing import Optional
 
 import lightning.pytorch as pl
+import timm
 import torch
 import torchmetrics
 from torch.optim import Optimizer
@@ -10,7 +11,7 @@ from transformers import TimesformerConfig, TimesformerModel, TimesformerForVide
 from solar_irradiance.losses.mape import MAPELoss
 from solar_irradiance.models.architectures.resnet import r3d_18, mc3_18
 from solar_irradiance.models.architectures.swin_transformer import swin3d_b
-from solar_irradiance.models.architectures.timesformer import Timesformer
+#from solar_irradiance.models.architectures.timesformer import Timesformer
 
 
 class Forecaster(pl.LightningModule):
@@ -35,22 +36,35 @@ class Forecaster(pl.LightningModule):
             self.network = swin3d_b(weights=Swin3D_B_Weights.KINETICS400_IMAGENET22K_V1, progress=True)
             self.network.head = torch.nn.Identity()
             self.network_head = torch.nn.Sequential(
-                torch.nn.Linear(self.network.num_features + 3, 256),
+                torch.nn.Linear(self.network.num_features + 4, 256),
                 torch.nn.ReLU(inplace=True),
                 torch.nn.Linear(256, 1),
             )
         elif model_name == 'r3d_18':
-            self.network = r3d_18(weights=R3D_18_Weights.KINETICS400_V1, progress=True, in_channels=4)
+            self.network = r3d_18(weights=R3D_18_Weights.KINETICS400_V1, progress=True, in_channels=self._input_channels)
             self.network_head = torch.nn.Sequential(
-                torch.nn.Linear(self.network.fc.in_features + 3, 256),
+                torch.nn.Linear(self.network.fc.in_features + 4, 256),
                 torch.nn.ReLU(inplace=True),
                 torch.nn.Linear(256, 1),
             )
             self.network.fc = torch.nn.Identity()
         elif model_name == 'mc3_18':
-            self.network = mc3_18(weights=MC3_18_Weights.KINETICS400_V1, progress=True, in_channels=4)
+            self.network = mc3_18(weights=MC3_18_Weights.KINETICS400_V1, progress=True, in_channels=self._input_channels)
             self.network_head = torch.nn.Sequential(
-                torch.nn.Linear(self.network.fc.in_features + 3, 256),
+                torch.nn.Linear(self.network.fc.in_features + 4, 256),
+                torch.nn.ReLU(inplace=True),
+                torch.nn.Linear(256, 1),
+            )
+            self.network.fc = torch.nn.Identity()
+        elif model_name.startswith('timm-'):
+            self.network = timm.create_model(
+                model_name.replace('timm-', ''), 
+                pretrained=True,
+                num_classes=1,
+                in_chans=self._input_channels,
+            )
+            self.network_head = torch.nn.Sequential(
+                torch.nn.Linear(self.network.fc.in_features + 4, 256),
                 torch.nn.ReLU(inplace=True),
                 torch.nn.Linear(256, 1),
             )

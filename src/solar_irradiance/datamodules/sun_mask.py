@@ -4,7 +4,6 @@ import cv2
 import numpy as np
 import pandas as pd
 import pvlib
-from scipy.ndimage import gaussian_filter
 
 
 # Folsom dataset
@@ -21,13 +20,11 @@ class SunMask:
             longitude: float,
             camera_orientation_compensation: int,
             focal_length: float,
-            blur_mask: bool = False,
         ):
         self._latitude = latitude
         self._longitude = longitude
         self._camera_orientation_compensation = camera_orientation_compensation
         self._focal_length = focal_length
-        self._blur_mask = blur_mask
 
     def __call__(self, image: np.ndarray, timestamp: str) -> np.ndarray:
         x, y = self._calculate_sun_center_in_image(timestamp, image.shape[:2])
@@ -36,12 +33,9 @@ class SunMask:
         mask = np.zeros(mask_shape, np.uint8)
         cv2.circle(mask, (x, y), 100, 255, -1)
 
-        if self._blur_mask:
-            mask = gaussian_filter(mask, sigma=9)
-
         mask = (mask / 255).astype(np.float32)
 
-        return np.concatenate([image, mask], axis=2)
+        return mask
 
     def _calculate_sun_center_in_image(
             self,

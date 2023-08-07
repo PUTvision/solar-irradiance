@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Tuple
+from typing import Tuple, Union
 
 import albumentations as A
 import pandas as pd
@@ -21,9 +21,9 @@ class ForecastingDataModule(LightningDataModule):
             image_std: Tuple[float, float, float],
             batch_size: int,
             workers: int,
-            sun_mask: bool,
-            blur_mask: bool,
+            add_sun_mask: bool,
             add_irradiance_channel: bool,
+            optical_flow: Union[None, str],
             seed: int,
     ):
         super().__init__()
@@ -34,9 +34,9 @@ class ForecastingDataModule(LightningDataModule):
         self._augment = augment
         self._batch_size = batch_size
         self._workers = workers
-        self._sun_mask = sun_mask
-        self._blur_mask = blur_mask
+        self._add_sun_mask = add_sun_mask
         self._add_irradiance_channel = add_irradiance_channel
+        self._optical_flow = optical_flow
         self._seed = seed
 
         self._transforms = A.ReplayCompose([
@@ -60,32 +60,32 @@ class ForecastingDataModule(LightningDataModule):
         with self._periods_path.open('rb') as f:
             periods = pd.read_pickle(f)
 
-        train_periods, val_periods = train_test_split(periods, test_size=0.2, random_state=self._seed)
-        val_periods, test_periods = train_test_split(val_periods, test_size=0.5, random_state=self._seed)
+        train_periods, val_periods = train_test_split(periods, test_size=0.2, random_state=self._seed, shuffle=True)
+        val_periods, test_periods = train_test_split(val_periods, test_size=0.5, random_state=self._seed, shuffle=True)
 
         self._train_dataset = FolsomForecastingDataset(
             data_root=self._data_root,
             periods=train_periods,
             transforms=self._augmentations if self._augment else self._transforms,
-            sun_mask=self._sun_mask,
-            blur_mask=self._blur_mask,
+            add_sun_mask=self._add_sun_mask,
             add_irradiance_channel=self._add_irradiance_channel,
+            optical_flow=self._optical_flow,
         )
         self._val_dataset = FolsomForecastingDataset(
             data_root=self._data_root,
             periods=val_periods,
             transforms=self._transforms,
-            sun_mask=self._sun_mask,
-            blur_mask=self._blur_mask,
+            add_sun_mask=self._add_sun_mask,
             add_irradiance_channel=self._add_irradiance_channel,
+            optical_flow=self._optical_flow,
         )
         self._test_dataset = FolsomForecastingDataset(
             data_root=self._data_root,
             periods=test_periods,
             transforms=self._transforms,
-            sun_mask=self._sun_mask,
-            blur_mask=self._blur_mask,
+            add_sun_mask=self._add_sun_mask,
             add_irradiance_channel=self._add_irradiance_channel,
+            optical_flow=self._optical_flow,
         )
 
     def train_dataloader(self):

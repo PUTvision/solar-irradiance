@@ -28,8 +28,8 @@ stages:
       size: 14883320
     - path: scripts/export_folsom.py
       hash: md5
-      md5: 2c2abc9b2ace28a01a975f250df2fe60
-      size: 2023
+      md5: 78092b6e37f76f5cf71770e3be76beeb
+      size: 1778
     params:
       params.yaml:
         export_periods.history_size: 3
@@ -37,8 +37,8 @@ stages:
     outs:
     - path: data/Prepared/periods.pickle
       hash: md5
-      md5: 036a030ad1c057517cc40f5056b035d7
-      size: 7965007
+      md5: ab55d2ce456144bae9c846b24eb19f7d
+      size: 7629468
   train_forecaster:
     cmd: python scripts/train_forecaster.py --data-root data/Folsom --periods-path
       data/Prepared/periods.pickle
@@ -112,6 +112,5 @@ stages:
             - 0.21698
             batch_size: 16
             workers: 6
-            sun_mask: false
-            blur_mask: false
+            add_sun_mask: false
             add_irradiance_channel: true

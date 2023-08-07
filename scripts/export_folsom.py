@@ -24,24 +24,22 @@ def export_folsom(cleaned_dataframe_path: Path, history_size: int, time_window: 
     print(f'Mean irradiance: {df["irradiance"].mean()}')
     print(f'Irradiance std: {df["irradiance"].std()}')
 
-    for index, row in tqdm(df.iterrows(), total=len(df)):
-        history = df.loc[index:index + pd.Timedelta(minutes=history_size - 1)]
-        if len(history) < history_size:
-            continue
+    for t, row in tqdm(df.iterrows(), total=len(df)):
+        t = pd.Timestamp(t)
+        t_m15 = t - pd.Timedelta(minutes=15)
+        t_m10 = t - pd.Timedelta(minutes=10)
+        t_m5 = t - pd.Timedelta(minutes=5)
+        t_p15 = t + pd.Timedelta(minutes=15)
 
-        target_moment_index = df.index[df.index.get_indexer([index + pd.Timedelta(minutes=time_window - 1)],
-                                                            method='nearest')]
-        time_difference = target_moment_index - index
-        if pd.Timedelta(minutes=time_window - 1, seconds=30) < time_difference < pd.Timedelta(
-                minutes=time_window, seconds=30):
+        if all(map(lambda x: x in df.index, [t_m15, t_m10, t_m5, t_p15])):
             periods.append({
                 'history': [
                     {
-                        'image_name': row['image_name'],
-                        'irradiance': row['irradiance']
-                    } for index, row in history.iterrows()
+                        'image_name': df.loc[_t]['image_name'],
+                        'irradiance': df.loc[_t]['irradiance']
+                    } for _t in [t_m15, t_m10, t_m5, t]
                 ],
-                'target_irradiance': df.loc[target_moment_index]['irradiance'],
+                'target_irradiance': df.loc[t_p15]['irradiance'],
             })
 
     print(f'Number of periods: {len(periods)}')
