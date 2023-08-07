@@ -20,7 +20,10 @@ IRRADIANCE_STD = 301.2625  # std irradiance in the dataset
 OPTICAL_FLOWS = {
     'dis': cv2.DISOpticalFlow_create(preset=cv2.DISOPTICAL_FLOW_PRESET_FAST),
     'farneback': cv2.optflow.createOptFlow_Farneback(),
-    'deepflow': cv2.optflow.createOptFlow_DeepFlow(),
+    'deep_flow': cv2.optflow.createOptFlow_DeepFlow(),
+    'pca_flow': cv2.optflow.createOptFlow_PCAFlow(),
+    'dual_tvl1': cv2.optflow.createOptFlow_DualTVL1(),
+    'dense_rlof': cv2.optflow.createOptFlow_DenseRLOF(), # requires RGB input
 }
 
 
@@ -72,7 +75,7 @@ class FolsomForecastingDataset(Dataset):
 
             if self._add_sun_mask:
                 sun_mask = self._sun_mask(image=image, timestamp=image_path.name[:15])
-                torch_image = torch.cat([torch_image, torch.unsqueeze(torch.from_numpy(sun_mask), dim=0)], dim=0)
+                torch_image = torch.cat([torch_image, torch.from_numpy(sun_mask).permute(2, 0, 1)], dim=0)
 
             if self._add_irradiance_channel:
                 if self._add_sun_mask:
@@ -100,8 +103,8 @@ class FolsomForecastingDataset(Dataset):
         target_irradiance = period['target_irradiance'] / MAX_IRRADIANCE
 
         return (
-            # torch.stack(source_images).permute(1, 0, 2, 3),
-            source_images[-1],
+            torch.stack(source_images).permute(1, 0, 2, 3),
+            # source_images[-1],
             torch.Tensor(source_irradiances),
             torch.Tensor([target_irradiance])
         )
