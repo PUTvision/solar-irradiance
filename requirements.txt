@@ -22,3 +22,6 @@ tqdm==4.65.0
 # ----- model export ----- #
 onnx==1.14.0
 onnxsim==0.4.33
+
+# ----- tests, linters ----- #
+pytest==7.4.0
