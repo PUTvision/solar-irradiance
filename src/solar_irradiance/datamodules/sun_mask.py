@@ -20,7 +20,7 @@ class SunMask:
             longitude: float,
             camera_orientation_compensation: int,
             focal_length: float,
-        ):
+    ):
         self._latitude = latitude
         self._longitude = longitude
         self._camera_orientation_compensation = camera_orientation_compensation
@@ -37,11 +37,7 @@ class SunMask:
 
         return mask
 
-    def _calculate_sun_center_in_image(
-            self,
-            timestamp: str,
-            image_size: Tuple[int, int],
-        ) -> Tuple[int]:
+    def _calculate_sun_center_in_image(self, timestamp: str, image_size: Tuple[int, int]) -> Tuple[int]:
 
         solarposition = pvlib.solarposition.get_solarposition(
             time=pd.to_datetime(timestamp, format='%Y%m%d_%H%M%S'),
@@ -52,8 +48,8 @@ class SunMask:
         azimuth = solarposition['azimuth'][0]
 
         # compensation of camera orientation
-        azimuth -= self._camera_orientation_compensation 
-        
+        azimuth -= self._camera_orientation_compensation
+
         R = 2 * self._focal_length * np.tan(np.deg2rad(zenith) / 2)
 
         x_sc = R * np.sin(np.deg2rad(azimuth))
@@ -62,6 +58,5 @@ class SunMask:
         # convert to the image plane
         x_scp = image_size[1] / 2 + x_sc * image_size[1]/2
         y_scp = image_size[0] / 2 + y_sc * image_size[0]/2
-        
-        return int(x_scp), int(y_scp)
 
+        return int(x_scp), int(y_scp)

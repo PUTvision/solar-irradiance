@@ -105,5 +105,3 @@ class ForecastingDataModule(LightningDataModule):
             self._test_dataset, batch_size=self._batch_size, num_workers=self._workers,
             pin_memory=True
         )
-
-

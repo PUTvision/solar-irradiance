@@ -11,7 +11,7 @@ from transformers import TimesformerConfig, TimesformerModel, TimesformerForVide
 from solar_irradiance.losses.mape import MAPELoss
 from solar_irradiance.models.architectures.resnet import r3d_18, mc3_18
 from solar_irradiance.models.architectures.swin_transformer import swin3d_b
-#from solar_irradiance.models.architectures.timesformer import Timesformer
+# from solar_irradiance.models.architectures.timesformer import Timesformer
 
 
 class Forecaster(pl.LightningModule):
@@ -58,7 +58,7 @@ class Forecaster(pl.LightningModule):
             self.network.fc = torch.nn.Identity()
         elif model_name.startswith('timm-'):
             self.network = timm.create_model(
-                model_name.replace('timm-', ''), 
+                model_name.replace('timm-', ''),
                 pretrained=True,
                 num_classes=1,
                 in_chans=self._input_channels,

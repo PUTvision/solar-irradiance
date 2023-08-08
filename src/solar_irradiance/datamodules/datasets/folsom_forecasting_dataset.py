@@ -23,7 +23,7 @@ OPTICAL_FLOWS = {
     'deep_flow': cv2.optflow.createOptFlow_DeepFlow(),
     'pca_flow': cv2.optflow.createOptFlow_PCAFlow(),
     'dual_tvl1': cv2.optflow.createOptFlow_DualTVL1(),
-    'dense_rlof': cv2.optflow.createOptFlow_DenseRLOF(), # requires RGB input
+    'dense_rlof': cv2.optflow.createOptFlow_DenseRLOF(),    # requires RGB input
 }
 
 
