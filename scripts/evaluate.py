@@ -32,14 +32,24 @@ OPTICAL_FLOWS = {
     "dis": cv2.DISOpticalFlow_create(preset=cv2.DISOPTICAL_FLOW_PRESET_FAST),
     "farneback": cv2.optflow.createOptFlow_Farneback(),
     "deep_flow": cv2.optflow.createOptFlow_DeepFlow(),
+    "pca_flow": cv2.optflow.createOptFlow_PCAFlow(),
+    "dual_tvl1": cv2.optflow.createOptFlow_DualTVL1(),
+    "dense_rlof": cv2.optflow.createOptFlow_DenseRLOF(), # requires RGB input
 }
 
 PROVIDERS = {
     "cpu": ("CPUExecutionProvider"),
     "openvino": ("OpenVINOExecutionProvider", {"device_type": "MYRIAD_FP16"}),
+    "cuda": ("CUDAExecutionProvider", {"cudnn_conv_use_max_workspace": '1'}),
     "tensorrt": (
         "TensorrtExecutionProvider",
-        {"device_id": 0, "trt_fp16_enable": True},
+        {
+            "device_id": 0,
+            "trt_fp16_enable": False,
+            "trt_int8_enable": True,
+            "trt_int8_use_native_calibration_table": True,
+            "trt_engine_cache_enable": False,
+        },
     ),
 }
 
@@ -56,11 +66,11 @@ def preprocess(img_data: np.ndarray) -> np.ndarray:
 
 @click.command()
 @click.option("--model_path", help="ONNX model path", type=click.Path(exists=True, file_okay=True))
-@click.option("--provider", help="Inference provider", type=click.Choice(["cpu", "openvino", "tensorrt"]), default="cpu")
-@click.option("--dims", help="Whether model is 3D, otherwise 2D", type=int, default=2)
+@click.option("--provider", help="Inference provider", type=click.Choice(["cpu", "openvino", "cuda", "tensorrt"]), default="cpu")
+@click.option("--dims", help="Model dimensions: 3 for 3D, 2 for 2D models", type=int, default=2)
 @click.option("--add_sun_mask", help="Add sun mask to input data", is_flag=True)
 @click.option("--add_irradiance_channel", help="Add irradiance channel to input data", is_flag=True)
-@click.option("--optical_flow", help="Add optical flow to input data", type=click.Choice(["dis", "farneback", "deep_flow"]), default=None)
+@click.option("--optical_flow", help="Add optical flow to input data", type=click.Choice(["dis", "farneback", "deep_flow", "pca_flow", "dual_tvl1", "dense_rlof"]), default=None)
 @click.option("--eval_periods_path", help="Data frame with evaluation periods", type=click.Path(exists=True, file_okay=True), default="data/Eval/eval_periods.pickle")
 @click.option("--dataset_path", help="Path to dataset image directory", type=click.Path(exists=True, dir_okay=True), default="data/Eval/images")
 def main(model_path, dims, provider, add_sun_mask, add_irradiance_channel, optical_flow, eval_periods_path, dataset_path):
@@ -94,6 +104,7 @@ def main(model_path, dims, provider, add_sun_mask, add_irradiance_channel, optic
     inference_time = 0.0
     process_time = 0.0
     sun_mask_time = 0.0
+    irr_channel_time = 0.0
     optical_flow_time = 0.0
 
     for p in tqdm(eval_periods):
@@ -115,14 +126,16 @@ def main(model_path, dims, provider, add_sun_mask, add_irradiance_channel, optic
             if add_sun_mask:
                 sun_mask_start = time.time()
                 sun_mask = sun_mask_gen(image=source_image, timestamp=image_path.name[:15])
-                sun_mask_time += time.time() - sun_mask_start
                 input_data = np.concatenate([input_data, np.transpose(sun_mask, (2, 0, 1))], axis=0)
+                sun_mask_time += time.time() - sun_mask_start
 
             if add_irradiance_channel:
+                irr_channel_start = time.time()
                 if add_sun_mask:
                     input_data[-1] *= irradiance
                 else:
                     input_data = np.concatenate([input_data, np.ones((1, *input_shape), dtype=np.float32) * irradiance], axis=0)
+                irr_channel_time += time.time() - irr_channel_start
 
             if optical_flow is not None:
                 of_time_start = time.time()
@@ -134,9 +147,8 @@ def main(model_path, dims, provider, add_sun_mask, add_irradiance_channel, optic
                 except:
                     flow = np.zeros((*input_shape, 2), dtype=np.uint8)
                 prev_image_gray = image_gray
-                optical_flow_time += time.time() - of_time_start
-
                 input_data = np.concatenate([input_data, np.transpose(flow, (2, 0, 1))], axis=0)
+                optical_flow_time += time.time() - of_time_start
 
             source_images.append(input_data)
             source_irradiances.append(irradiance)
@@ -163,6 +175,7 @@ def main(model_path, dims, provider, add_sun_mask, add_irradiance_channel, optic
     log.info(f"Process average time [s]: {process_time / periods_num}")
     log.info(f"Process frames per second [img/s]: {periods_num / process_time}")
     log.info(f"Sun mask generation average time [s]: {sun_mask_time / periods_num}")
+    log.info(f"Irradiance channel addition average time [s]: {irr_channel_time / periods_num}")
     log.info(f"Optical flow average time [s]: {optical_flow_time / periods_num}")
 
     mape = mean_absolute_percentage_error(target_irradiances, outputs)
