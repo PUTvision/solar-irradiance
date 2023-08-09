@@ -2,14 +2,14 @@
 
 
 ## **Overview**
-> PyTorch repository for solar irradiance and cloud segmentation tasks with PyTorch Lightning, Hydra and Neptune included.
+> PyTorch repository for solar irradiance forecasting task with DVC, PyTorch, Lightning, and Neptune included.
 
 
 ## Table of Contents
-* [Requirements](#Requirements)
-* [Data](#Data)
-* [Structure](#Structure)
-* [Usage](#Usage)
+* [Requirements](#requirements)
+* [Data](#data)
+* [Project Structure](#project-structure)
+* [Usage](#usage)
 
 ## Requirements
 
@@ -20,25 +20,40 @@
 
 <div align="center">
 
-|           **Task**          |                        **Dataset**                       |             **Samples**             | **Description** |
-|:---------------------------:|:--------------------------------------------------------:|:-----------------------------------:|:---------------:|
-| Solar Irradiance Regression |        [Folsom](https://zenodo.org/record/2826939)       |   3 years  (sampled every minute)   |                 |
-| Solar Irradiance Regression |       [SIRTA](https://sirta.ipsl.fr/data-overview/)      | 8 years  (sampled every two minute) |                 |
+|           **Task**          |                        **Dataset**                       |             **Samples**             | **Used** |
+|:---------------------------:|:--------------------------------------------------------:|:-----------------------------------:|:--------:|
+| Solar Irradiance Regression |        [Folsom](https://zenodo.org/record/2826939)       |   3 years  (sampled every minute)   |     *    |
+| Solar Irradiance Regression |       [SIRTA](https://sirta.ipsl.fr/data-overview/)      | 8 years  (sampled every two minute) |          |
 | Solar Irradiance Regression | [Girasol](https://datadryad.org/stash/dataset/doi%253A10.5061%252Fdryad.zcrjdfn9m) | 244 individual days from 3 years period | |
-|      Cloud Segmentation     | [SWINySEG](http://vintage.winklerbros.net/swinyseg.html) |                 6768                |                 |
-|      Cloud Segmentation     |        [HYTA](https://github.com/Soumyabrata/HYTA)       |                  32                 |                 |
+|      Cloud Segmentation     | [SWINySEG](http://vintage.winklerbros.net/swinyseg.html) |                 6768                |          |
+|      Cloud Segmentation     |        [HYTA](https://github.com/Soumyabrata/HYTA)       |                  32                 |          |
 
 </div>
 
 The data is stored in the `data` directory. The `data` directory is structured as shown below. Note that the `irradiance.csv` file is only present in the `Folsom` and `SIRTA` datasets and contains the irradiance values for each image. Whereas the `HYTA` and `SWINySEG` datasets contain the masks for each image in the `masks` directory. The `skip_images.txt` file contains the names of the images that should be skipped during training and evaluation due to the lack of ground-truth irradiance, mask or file corruption.
 
 ```console
-├── data
-│   └── <DATASET NAME>
-│       ├── images
-│       ├── masks
-|       ├── irradiance.csv
-|       └── skip_images.txt
+                             +-----------------+
+                             | data/Folsom.dvc |*
+                       ******+-----------------+ ******
+                 ******               *                ******
+          *******                     *                      ******
+    ******                            *                            ******
+****                         +-----------------+                         ****
+*                            | clean_dataframe |                            *
+*                            +-----------------+                            *
+*                                     *                                     *
+*                                     *                                     *
+*                                     *                                     *
+**                           +----------------+                            **
+  ***                        | export_periods |                         ***
+     ***                     +----------------+                      ***
+        ***                ****                ****               ***
+           ***          ***                        ***         ***
+              **      **                              **     **
+        +------------------+                  +---------------------+
+        | train_forecaster |                  | export_eval_periods |
+        +------------------+                  +---------------------+
 ```
 
 ## Project Structure
@@ -47,14 +62,13 @@ The data is stored in the `data` directory. The `data` directory is structured a
 ├── config
 ├── data
 ├── outputs
-├── src
-|   └── solar_irradiance
-│       ├── datamodules
-│       │   └──  datasets
-│       ├── losses
-│       ├── metrics
-│       ├── models
-│       └── utils
+├── solar_irradiance
+|   ├── datamodules
+│   │   └── datasets
+│   ├── losses
+│   ├── models
+│   │   └── architectures
+│   └── utils
 └── tests
     └── unit
 ```
@@ -64,17 +78,5 @@ The data is stored in the `data` directory. The `data` directory is structured a
 * train
 
 ```shell
-HYDRA_FULL_ERROR=1 python src/main.py --config-name regressor
-```
-
-* evaluate
-
-```shell
-HYDRA_FULL_ERROR=1 python src/main.py --config-name regressor test_only=true restore_from_ckpt=/home/path/to/checkpoint.ckpt
-```
-
-* export
-
-```shell
-HYDRA_FULL_ERROR=1 python src/main.py --config-name regressor test_only=true restore_from_ckpt=/home/path/to/checkpoint.ckpt export.export_to_onnx=true
+python scripts/train_forecaster.py --data-root data/Folsom --periods-path data/Prepared/periods.pickle
 ```

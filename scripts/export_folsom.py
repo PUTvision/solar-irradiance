@@ -24,7 +24,7 @@ def export_folsom(cleaned_dataframe_path: Path, history_size: int, time_window: 
     print(f'Mean irradiance: {df["irradiance"].mean()}')
     print(f'Irradiance std: {df["irradiance"].std()}')
 
-    for t, row in tqdm(df.iterrows(), total=len(df)):
+    for t, _ in tqdm(df.iterrows(), total=len(df)):
         t = pd.Timestamp(t)
         t_m15 = t - pd.Timedelta(minutes=15)
         t_m10 = t - pd.Timedelta(minutes=10)

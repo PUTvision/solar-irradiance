@@ -340,3 +340,7 @@ lightning_logs/*
 
 # PyCharm
 .idea/
+
+# Ignore ONNX models
+models/*
+*.onnx
