@@ -33,19 +33,24 @@ def generate_optical_flow(optical_flow, periods_path, dataset_path):
 
     for p in tqdm(periods):
         flow = None
-        prev_image_gray = None
+        prev_image = None
 
         for history_item in p["history"]:
             image_path = Path(dataset_path, history_item["image_name"])
             source_image = np.asarray(Image.open(image_path))
             source_image = cv2.resize(source_image, input_shape)
 
-            image_gray = cv2.cvtColor(source_image, cv2.COLOR_RGB2GRAY)
-            if prev_image_gray is None:
-                prev_image_gray = image_gray.copy()
-            
-            flow = of.calc(prev_image_gray, image_gray, flow)
-            prev_image_gray = image_gray
+            if optical_flow == "dense_rlof":
+                if prev_image is None:
+                    prev_image = source_image.copy()
+                flow = of.calc(prev_image, source_image, flow)
+                prev_image = source_image
+            else:
+                image_gray = cv2.cvtColor(source_image, cv2.COLOR_RGB2GRAY)
+                if prev_image is None:
+                    prev_image = image_gray.copy()
+                flow = of.calc(prev_image, image_gray, flow)
+                prev_image = image_gray
 
         flow_x = Image.fromarray(flow[..., 0])
         flow_y = Image.fromarray(flow[..., 1])
