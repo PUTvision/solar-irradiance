@@ -281,7 +281,7 @@ class VideoResNet(nn.Module):
         layers.append(block(self.inplanes, planes, conv_builder, stride, downsample))
 
         self.inplanes = planes * block.expansion
-        for i in range(1, blocks):
+        for _ in range(1, blocks):
             layers.append(block(self.inplanes, planes, conv_builder))
 
         return nn.Sequential(*layers)
@@ -417,7 +417,6 @@ def r2plus1d_18(*, weights: Optional[R2Plus1D_18_Weights] = None, progress: bool
         progress,
         **kwargs,
     )
-
 
 
 model_urls = _ModelURLs(

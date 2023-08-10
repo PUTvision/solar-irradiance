@@ -17,8 +17,12 @@ opencv-contrib-python==4.8.0.74
 pandas==2.0.3
 pvlib==0.10.1
 timm==0.9.2
+transformers==4.31.0
 tqdm==4.65.0
 
 # ----- model export ----- #
 onnx==1.14.0
 onnxsim==0.4.33
+
+# ----- tests, linters ----- #
+pytest==7.4.0

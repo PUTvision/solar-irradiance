@@ -343,3 +343,7 @@ lightning_logs/*
 
 # Jupyter Notebook
 notebooks/
+
+# Ignore ONNX models
+models/*
+*.onnx

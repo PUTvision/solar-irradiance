@@ -23,7 +23,7 @@ OPTICAL_FLOWS = {
     'deep_flow': cv2.optflow.createOptFlow_DeepFlow(),
     'pca_flow': cv2.optflow.createOptFlow_PCAFlow(),
     'dual_tvl1': cv2.optflow.createOptFlow_DualTVL1(),
-    'dense_rlof': cv2.optflow.createOptFlow_DenseRLOF(), # requires RGB input
+    'dense_rlof': cv2.optflow.createOptFlow_DenseRLOF(),    # requires RGB input
 }
 
 
@@ -74,7 +74,7 @@ class FolsomForecastingDataset(Dataset):
             torch_image = torch.from_numpy(image).permute(2, 0, 1)
 
             if self._add_sun_mask:
-                sun_mask = self._sun_mask(image=image, timestamp=image_path.name[:15])
+                sun_mask = self._sun_mask(image_shape=image.shape, timestamp=image_path.name[:15])
                 torch_image = torch.cat([torch_image, torch.from_numpy(sun_mask).permute(2, 0, 1)], dim=0)
 
             if self._add_irradiance_channel:
