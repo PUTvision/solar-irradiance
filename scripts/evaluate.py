@@ -46,7 +46,7 @@ PROVIDERS = {
         {
             "device_id": 0,
             "trt_fp16_enable": False,
-            "trt_int8_enable": True,
+            "trt_int8_enable": False,
             "trt_int8_use_native_calibration_table": True,
             "trt_engine_cache_enable": False,
         },
@@ -74,7 +74,7 @@ def preprocess(img_data: np.ndarray) -> np.ndarray:
 @click.option("--eval_periods_path", help="Data frame with evaluation periods", type=click.Path(exists=True, file_okay=True), default="data/Eval/eval_periods.pickle")
 @click.option("--dataset_path", help="Path to dataset image directory", type=click.Path(exists=True, dir_okay=True), default="data/Eval/images")
 def main(model_path, dims, provider, add_sun_mask, add_irradiance_channel, optical_flow, eval_periods_path, dataset_path):
-    optical_flow = OPTICAL_FLOWS.get(optical_flow)
+    of = OPTICAL_FLOWS.get(optical_flow)
     input_shape = (384, 384)
 
     with open(eval_periods_path, "rb") as f:
@@ -113,7 +113,7 @@ def main(model_path, dims, provider, add_sun_mask, add_irradiance_channel, optic
         source_images = []
         source_irradiances = []
         flow = None
-        prev_image_gray = None
+        prev_image = None
 
         for history_item in p["history"]:
             image_path = Path(dataset_path, history_item["image_name"])
@@ -139,14 +139,11 @@ def main(model_path, dims, provider, add_sun_mask, add_irradiance_channel, optic
 
             if optical_flow is not None:
                 of_time_start = time.time()
-                image_gray = cv2.cvtColor(source_image, cv2.COLOR_RGB2GRAY)
-                if prev_image_gray is None:
-                    prev_image_gray = image_gray.copy()
-                try:
-                    flow = optical_flow.calc(prev_image_gray, image_gray, flow)
-                except:
-                    flow = np.zeros((*input_shape, 2), dtype=np.uint8)
-                prev_image_gray = image_gray
+                image = cv2.cvtColor(source_image, cv2.COLOR_RGB2GRAY) if optical_flow != "dense_rlof" else source_image
+                if prev_image is None:
+                    prev_image = image.copy()
+                flow = of.calc(prev_image, image, flow)
+                prev_image = image
                 input_data = np.concatenate([input_data, np.transpose(flow, (2, 0, 1))], axis=0)
                 optical_flow_time += time.time() - of_time_start
 
