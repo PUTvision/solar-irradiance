@@ -59,7 +59,6 @@ def train_forecaster(data_root: Path, periods_path: Path):
         time_window=data_cfg.time_window,
         history_size=data_cfg.history_size
     )
-    model = torch.compile(model)
 
     checkpoint_callback = ModelCheckpoint(**cfg.callbacks.model_checkpoint)
     model_summary_callback = ModelSummary(max_depth=1)
@@ -104,6 +103,9 @@ def train_forecaster(data_root: Path, periods_path: Path):
     )
 
     if not cfg.test_only:
+        log.info('Compiling model')
+        model = torch.compile(model)
+
         log.info('Starting training process')
         trainer.fit(model, datamodule)
 
@@ -121,15 +123,17 @@ def train_forecaster(data_root: Path, periods_path: Path):
         log.info(f'Exporting model to onnx with parameters: opset={opset}, use_simplifier={use_simplifier}')
 
         model.eval()
-        x = next(iter(datamodule.test_dataloader()))[0][:1]
+        input_data = next(iter(datamodule.test_dataloader()))
+        image_input = input_data[0][:1]
+        irradiance_history = input_data[1][:1]
 
         torch.onnx.export(
-            model.network,
-            x,  # model input (or a tuple for multiple inputs)
-            'model.onnx',  # where to save the model (can be a file or file-like object)
-            export_params=True,  # store the trained parameter weights inside the model file
-            opset_version=opset,  # the ONNX version to export the model to
-            input_names=['input'],
+            model,
+            (image_input, irradiance_history,), # model input (or a tuple for multiple inputs)
+            f'{cfg.model.model_name}.onnx',     # where to save the model (can be a file or file-like object)
+            export_params=True,                 # store the trained parameter weights inside the model file
+            opset_version=opset,                # the ONNX version to export the model to
+            input_names=['image_input', 'irradiance_history'],
             output_names=['output'],
             do_constant_folding=False
         )

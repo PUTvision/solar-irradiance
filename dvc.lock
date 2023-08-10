@@ -28,8 +28,8 @@ stages:
       size: 14883320
     - path: scripts/export_folsom.py
       hash: md5
-      md5: 78092b6e37f76f5cf71770e3be76beeb
-      size: 1778
+      md5: 7f4867fe4f7cd16a188ceaf1c37a8d12
+      size: 1770
     params:
       params.yaml:
         export_periods.history_size: 3
@@ -114,3 +114,22 @@ stages:
             workers: 6
             add_sun_mask: false
             add_irradiance_channel: true
+  export_eval_periods:
+    cmd: python scripts/export_eval_periods.py --periods_path data/Prepared/periods.pickle
+      --data_root data/Folsom --output_path data/Eval
+    deps:
+    - path: data/Folsom
+      hash: md5
+      md5: 1a067740695b101faef4ac7b7a6c721b.dir
+      size: 64100647697
+      nfiles: 775917
+    - path: data/Prepared/periods.pickle
+      hash: md5
+      md5: ab55d2ce456144bae9c846b24eb19f7d
+      size: 7629468
+    outs:
+    - path: data/Eval
+      hash: md5
+      md5: 3d18746ef1cbf3079ecd7c0041aa2361.dir
+      size: 120850958
+      nfiles: 1519
