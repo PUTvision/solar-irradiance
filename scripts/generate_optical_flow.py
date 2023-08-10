@@ -35,6 +35,12 @@ def generate_optical_flow(optical_flow, periods_path, dataset_path):
         flow = None
         prev_image = None
 
+        flow_x_path = Path(periods_path.parent, "flows", optical_flow, p["history"][-1]["image_name"].replace(".jpg", "_x.tiff"))
+        flow_y_path = Path(periods_path.parent, "flows", optical_flow, p["history"][-1]["image_name"].replace(".jpg", "_y.tiff"))
+
+        if flow_x_path.is_file() and flow_y_path.is_file():
+            continue
+
         for history_item in p["history"]:
             image_path = Path(dataset_path, history_item["image_name"])
             source_image = np.asarray(Image.open(image_path))
@@ -54,8 +60,8 @@ def generate_optical_flow(optical_flow, periods_path, dataset_path):
 
         flow_x = Image.fromarray(flow[..., 0])
         flow_y = Image.fromarray(flow[..., 1])
-        flow_x.save(Path(periods_path.parent, "flows", optical_flow, p["history"][-1]["image_name"].replace(".jpg", "_x.tiff")))
-        flow_y.save(Path(periods_path.parent, "flows", optical_flow, p["history"][-1]["image_name"].replace(".jpg", "_y.tiff")))
+        flow_x.save(flow_x_path)
+        flow_y.save(flow_y_path)
 
 
 if __name__ == "__main__":
