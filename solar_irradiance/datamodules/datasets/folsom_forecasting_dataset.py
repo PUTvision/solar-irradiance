@@ -9,6 +9,7 @@ from albumentations import ReplayCompose
 from torch.utils.data import Dataset
 
 from solar_irradiance.datamodules.sun_mask import SunMask
+from solar_irradiance.datamodules.cloud_mask import CloudMask
 
 MAX_IRRADIANCE = 1366.0  # max irradiance in the dataset
 IRRADIANCE_MEAN = 419.1655  # mean irradiance in the dataset
@@ -41,6 +42,7 @@ class FolsomForecastingDataset(Dataset):
             add_sun_mask: bool,
             add_irradiance_channel: bool,
             optical_flow: Union[None, str],
+            cloud_mask_method: Union[None, str],
     ):
         self._data_root = data_root
         self._periods = periods
@@ -49,6 +51,9 @@ class FolsomForecastingDataset(Dataset):
         self._sun_mask = SunMask(self.latitude, self.longitude, self.camera_orientation_compensation, self.focal_length)
         self._add_irradiance_channel = add_irradiance_channel
         self._of = OPTICAL_FLOWS.get(optical_flow)
+        self._cloud_mask_method = cloud_mask_method
+        if self._cloud_mask_method is not None:
+            self._cloud_mask = CloudMask(shape=(384, 384), method=cloud_mask_method)
 
     def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         period = self._periods[index]
@@ -82,6 +87,10 @@ class FolsomForecastingDataset(Dataset):
                     torch_image[-1] *= irradiance
                 else:
                     torch_image = torch.cat([torch_image, torch.full((1, *torch_image.shape[1:]), irradiance)], dim=0)
+
+            if self._cloud_mask_method is not None:
+                cloud_mask = self._cloud_mask(image=image)
+                torch_image = torch.cat([torch_image, torch.from_numpy(cloud_mask).permute(2, 0, 1)], dim=0)
 
             if self._of is not None:
                 image_gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
