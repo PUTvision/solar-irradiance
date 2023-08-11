@@ -35,8 +35,8 @@ def generate_optical_flow(optical_flow, periods_path, dataset_path):
         flow = None
         prev_image = None
 
-        flow_x_path = Path(periods_path.parent, "flows", optical_flow, p["history"][-1]["image_name"].replace(".jpg", "_x.tiff"))
-        flow_y_path = Path(periods_path.parent, "flows", optical_flow, p["history"][-1]["image_name"].replace(".jpg", "_y.tiff"))
+        flow_x_path = Path(periods_path.resolve().parents[1], "flows", optical_flow, p["history"][-1]["image_name"].replace(".jpg", "_x.tiff"))
+        flow_y_path = Path(periods_path.resolve().parents[1], "flows", optical_flow, p["history"][-1]["image_name"].replace(".jpg", "_y.tiff"))
 
         if flow_x_path.is_file() and flow_y_path.is_file():
             continue
