@@ -330,6 +330,20 @@ poetry.toml
 
 # End of https://www.toptal.com/developers/gitignore/api/python,visualstudiocode,pycharm,linux,jupyternotebooks
 
-# Filter out datasets files and output checkpoints
-data/*
+# Filter out output checkpoints
 outputs/*
+checkpoints/*
+lightning_logs/*
+
+# Neptune logger
+.neptune/*
+
+# PyCharm
+.idea/
+
+# Jupyter Notebook
+notebooks/
+
+# Ignore ONNX models
+models/*
+*.onnx
