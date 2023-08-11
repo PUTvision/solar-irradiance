@@ -84,7 +84,7 @@ def _compute_attention_mask_3d(
     for d in slices[0]:
         for h in slices[1]:
             for w in slices[2]:
-                attn_mask[d[0] : d[1], h[0] : h[1], w[0] : w[1]] = count
+                attn_mask[d[0]: d[1], h[0]: h[1], w[0]: w[1]] = count
                 count += 1
 
     # Partition window on attn_mask
@@ -284,7 +284,11 @@ class ShiftedWindowAttention3d(nn.Module):
         self.register_buffer("relative_position_index", relative_position_index)
 
     def get_relative_position_bias(self, window_size: List[int]) -> torch.Tensor:
-        return _get_relative_position_bias(self.relative_position_bias_table, self.relative_position_index, window_size)  # type: ignore
+        return _get_relative_position_bias(
+            self.relative_position_bias_table,
+            self.relative_position_index,
+            window_size,
+        )
 
     def forward(self, x: Tensor) -> Tensor:
         _, t, h, w, _ = x.shape

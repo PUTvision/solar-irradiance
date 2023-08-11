@@ -27,6 +27,17 @@ stages:
     outs:
       - ${export_periods.output_path}
 
+  export_eval_periods:
+    cmd: python ${export_eval_periods.script_path}
+         --periods_path ${export_periods.output_path}
+         --data_root ${data_root}
+         --output_path ${export_eval_periods.output_path}
+    deps:
+      - ${data_root}
+      - ${export_periods.output_path}
+    outs:
+      - ${export_eval_periods.output_path}
+
   train_forecaster:
     cmd: python ${train_forecaster.script_path}
          --data-root ${data_root}

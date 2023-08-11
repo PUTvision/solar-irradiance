@@ -340,3 +340,13 @@ lightning_logs/*
 
 # PyCharm
 .idea/
+
+# Jupyter Notebook
+notebooks/
+
+# Ignore ONNX models
+models/*
+*.onnx
+
+# Ignore pre-generated optical flows
+data/flows/*
