@@ -23,7 +23,7 @@ train_forecaster:
   restore_from_ckpt:
 
   export:
-    export_to_onnx: True
+    export_to_onnx: False
     opset: 15
     use_simplifier: False
 
