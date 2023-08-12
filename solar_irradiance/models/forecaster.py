@@ -55,11 +55,15 @@ class Forecaster(pl.LightningModule):
             self.network.fc = torch.nn.Identity()
 
         self.num_features += 4  # Add 4 historical irradiances
+        self.hidden_size = 256
+        self.lstm = torch.nn.LSTM(input_size=self.num_features, hidden_size=self.hidden_size, num_layers=1, batch_first=True)
         self.network_head = torch.nn.Sequential(
-            torch.nn.Linear(self.num_features, 256),
-            torch.nn.ReLU(inplace=True),
+            # torch.nn.Linear(self.num_features, 256),
+            torch.nn.ReLU(inplace=False),
             torch.nn.Linear(256, 1),
         )
+
+        self.hidden_cell = (torch.zeros(1, 16, self.hidden_size).to(device='cuda'), torch.zeros(1, 16, self.hidden_size).to(device='cuda'))
 
         if loss_function == 'MSE':
             self.loss = torch.nn.MSELoss()
@@ -89,7 +93,13 @@ class Forecaster(pl.LightningModule):
 
     def forward(self, x: torch.Tensor, irradiance_history: torch.Tensor) -> torch.Tensor:
         x = self.network(x)
-        x = self.network_head(torch.cat([x, irradiance_history], dim=1))
+
+        # irradiance_history = irradiance_history.unsqueeze(1).expand(-1, x.shape[1], -1)
+        # x = torch.cat((x.unsqueeze(2), irradiance_history), dim=2)
+        x = torch.cat((x.unsqueeze(1), irradiance_history.unsqueeze(1)), dim=2)
+        # x = torch.cat([x, irradiance_history], dim=0)
+        x, _ = self.lstm(x)
+        x = self.network_head(x.view(-1, self.hidden_size))
         return x
 
     def training_step(self, batch: torch.Tensor, batch_idx: int) -> Optional[torch.Tensor]:
