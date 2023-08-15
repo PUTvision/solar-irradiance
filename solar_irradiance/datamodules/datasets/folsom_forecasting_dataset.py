@@ -18,16 +18,6 @@ IRRADIANCE_STD = 301.2625  # std irradiance in the dataset
 # MAX_IRRADIANCE = 1600.0 # max irradiance from Hukseflux pyranometer
 
 
-OPTICAL_FLOWS = {
-    'dis': cv2.DISOpticalFlow_create(preset=cv2.DISOPTICAL_FLOW_PRESET_FAST),
-    'farneback': cv2.optflow.createOptFlow_Farneback(),
-    'deep_flow': cv2.optflow.createOptFlow_DeepFlow(),
-    'pca_flow': cv2.optflow.createOptFlow_PCAFlow(),
-    'dual_tvl1': cv2.optflow.createOptFlow_DualTVL1(),
-    'dense_rlof': cv2.optflow.createOptFlow_DenseRLOF(),    # requires RGB input
-}
-
-
 class FolsomForecastingDataset(Dataset):
     latitude = 38.642,
     longitude = -121.148
@@ -50,7 +40,7 @@ class FolsomForecastingDataset(Dataset):
         self._add_sun_mask = add_sun_mask
         self._sun_mask = SunMask(self.latitude, self.longitude, self.camera_orientation_compensation, self.focal_length)
         self._add_irradiance_channel = add_irradiance_channel
-        self._of = OPTICAL_FLOWS.get(optical_flow)
+        self._optical_flow = optical_flow
         self._cloud_mask_method = cloud_mask_method
         if self._cloud_mask_method is not None:
             self._cloud_mask = CloudMask(shape=(384, 384), method=cloud_mask_method)
@@ -64,7 +54,7 @@ class FolsomForecastingDataset(Dataset):
         flow = None
         prev_image_gray = None
 
-        for history_item in period['history']:
+        for history_idx, history_item in enumerate(period['history']):
             image_path = self._data_root / 'images' / history_item['image_name']
             irradiance = history_item['irradiance'] / MAX_IRRADIANCE
             image = np.asarray(Image.open(image_path))
@@ -92,28 +82,25 @@ class FolsomForecastingDataset(Dataset):
                 cloud_mask = self._cloud_mask(image=image)
                 torch_image = torch.cat([torch_image, torch.from_numpy(cloud_mask).permute(2, 0, 1)], dim=0)
 
-            if self._of is not None:
-                image_gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-                if prev_image_gray is None:
-                    prev_image_gray = image_gray.copy()
+            if self._optical_flow is not None and history_idx == 3:
+                flow_x_path = self._data_root.parent / 'flows' / self._optical_flow / history_item['image_name'].replace('.jpg', '_x.tiff')
+                flow_y_path = self._data_root.parent / 'flows' / self._optical_flow / history_item['image_name'].replace('.jpg', '_y.tiff')
 
-                try:
-                    flow = self._of.calc(prev_image_gray, image_gray, flow)
-                except:
-                    flow = np.zeros((image.shape[0], image.shape[1], 2), dtype=np.uint8)
+                flow_x = np.asarray(Image.open(flow_x_path))
+                flow_y = np.asarray(Image.open(flow_y_path))
 
-                prev_image_gray = image_gray
-
-                torch_image = torch.cat([torch_image, torch.from_numpy(flow).permute(2, 0, 1)], dim=0)
+                torch_image = torch.cat([torch_image, torch.from_numpy(flow_x).unsqueeze(0), torch.from_numpy(flow_y).unsqueeze(0)], dim=0)
 
             source_images.append(torch_image)
             source_irradiances.append(irradiance)
 
         target_irradiance = period['target_irradiance'] / MAX_IRRADIANCE
 
+        # image_input = torch.stack(source_images).permute(1, 0, 2, 3)
+        image_input = source_images[-1]
+
         return (
-            torch.stack(source_images).permute(1, 0, 2, 3),
-            # source_images[-1],
+            image_input,
             torch.Tensor(source_irradiances),
             torch.Tensor([target_irradiance])
         )
