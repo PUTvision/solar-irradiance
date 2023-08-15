@@ -104,8 +104,9 @@ def train_forecaster(data_root: Path, periods_path: Path):
     )
 
     if not cfg.test_only:
-        log.info('Compiling model')
-        model = torch.compile(model)
+        if cfg.model.compile:
+            log.info('Compiling model')
+            model = torch.compile(model)
 
         log.info('Starting training process')
         trainer.fit(model, datamodule)
