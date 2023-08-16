@@ -182,9 +182,9 @@ class BasicStem(nn.Sequential):
 class R2Plus1dStem(nn.Sequential):
     """R(2+1)D stem is different than the default one as it uses separated 3D convolution"""
 
-    def __init__(self) -> None:
+    def __init__(self, in_channels: int = 3) -> None:
         super().__init__(
-            nn.Conv3d(3, 45, kernel_size=(1, 7, 7), stride=(1, 2, 2), padding=(0, 3, 3), bias=False),
+            nn.Conv3d(in_channels, 45, kernel_size=(1, 7, 7), stride=(1, 2, 2), padding=(0, 3, 3), bias=False),
             nn.BatchNorm3d(45),
             nn.ReLU(inplace=True),
             nn.Conv3d(45, 64, kernel_size=(3, 1, 1), stride=(1, 1, 1), padding=(1, 0, 0), bias=False),
@@ -310,8 +310,7 @@ def _video_resnet(
 
 
 @handle_legacy_interface(weights=("pretrained", R3D_18_Weights.KINETICS400_V1))
-def r3d_18(*, weights: Optional[R3D_18_Weights] = None, progress: bool = True, in_channels: int = 3,
-           **kwargs: Any) -> VideoResNet:
+def r3d_18(*, weights: Optional[R3D_18_Weights] = None, progress: bool = True, in_channels: int = 3, **kwargs: Any) -> VideoResNet:
     """Construct 18 layer Resnet3D model.
 
     .. betastatus:: video module
@@ -347,8 +346,7 @@ def r3d_18(*, weights: Optional[R3D_18_Weights] = None, progress: bool = True, i
 
 
 @handle_legacy_interface(weights=("pretrained", MC3_18_Weights.KINETICS400_V1))
-def mc3_18(*, weights: Optional[MC3_18_Weights] = None, progress: bool = True, in_channels: int = 3,
-           **kwargs: Any) -> VideoResNet:
+def mc3_18(*, weights: Optional[MC3_18_Weights] = None, progress: bool = True, in_channels: int = 3, **kwargs: Any) -> VideoResNet:
     """Construct 18 layer Mixed Convolution network as in
 
     .. betastatus:: video module
@@ -384,7 +382,7 @@ def mc3_18(*, weights: Optional[MC3_18_Weights] = None, progress: bool = True, i
 
 
 @handle_legacy_interface(weights=("pretrained", R2Plus1D_18_Weights.KINETICS400_V1))
-def r2plus1d_18(*, weights: Optional[R2Plus1D_18_Weights] = None, progress: bool = True, **kwargs: Any) -> VideoResNet:
+def r2plus1d_18(*, weights: Optional[R2Plus1D_18_Weights] = None, progress: bool = True, in_channels: int = 3, **kwargs: Any) -> VideoResNet:
     """Construct 18 layer deep R(2+1)D network as in
 
     .. betastatus:: video module
@@ -412,7 +410,7 @@ def r2plus1d_18(*, weights: Optional[R2Plus1D_18_Weights] = None, progress: bool
         BasicBlock,
         [Conv2Plus1D] * 4,
         [2, 2, 2, 2],
-        R2Plus1dStem,
+        partial(R2Plus1dStem, in_channels=in_channels),
         weights,
         progress,
         **kwargs,
