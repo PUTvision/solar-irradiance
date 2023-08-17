@@ -30,12 +30,13 @@ train_forecaster:
   #### TRAINER ####
   trainer:
     devices: 1
-    precision: bf16-mixed
+    precision: 16
     max_epochs: 1000
 
   #### MODEL ####
   model:
-    model_name: r3d_18
+    model_name: timm-resnet34
+    compile: False
     loss_function: MAE
     lr: 3e-4
     lr_patience: 5
@@ -67,4 +68,5 @@ train_forecaster:
     workers: 32
     add_sun_mask: True
     add_irradiance_channel: True
-    optical_flow: null # available: null, dis, farneback, deep_flow, pca_flow, dual_tvl1, dense_rlof
+    cloud_mask_method: "blue_red_difference" # available: null, blue_red_ratio, blue_red_difference, normalized_blue_red_ratio
+    optical_flow: "dense_rlof" # available: null, dis, farneback, deep_flow, pca_flow, dual_tvl1, dense_rlof

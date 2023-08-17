@@ -24,6 +24,7 @@ class ForecastingDataModule(LightningDataModule):
             add_sun_mask: bool,
             add_irradiance_channel: bool,
             optical_flow: Union[None, str],
+            cloud_mask_method: Union[None, str],
             seed: int,
     ):
         super().__init__()
@@ -37,6 +38,7 @@ class ForecastingDataModule(LightningDataModule):
         self._add_sun_mask = add_sun_mask
         self._add_irradiance_channel = add_irradiance_channel
         self._optical_flow = optical_flow
+        self._cloud_mask_method = cloud_mask_method
         self._seed = seed
 
         self._transforms = A.ReplayCompose([
@@ -70,6 +72,7 @@ class ForecastingDataModule(LightningDataModule):
             add_sun_mask=self._add_sun_mask,
             add_irradiance_channel=self._add_irradiance_channel,
             optical_flow=self._optical_flow,
+            cloud_mask_method = self._cloud_mask_method,
         )
         self._val_dataset = FolsomForecastingDataset(
             data_root=self._data_root,
@@ -78,6 +81,7 @@ class ForecastingDataModule(LightningDataModule):
             add_sun_mask=self._add_sun_mask,
             add_irradiance_channel=self._add_irradiance_channel,
             optical_flow=self._optical_flow,
+            cloud_mask_method = self._cloud_mask_method,
         )
         self._test_dataset = FolsomForecastingDataset(
             data_root=self._data_root,
@@ -86,6 +90,7 @@ class ForecastingDataModule(LightningDataModule):
             add_sun_mask=self._add_sun_mask,
             add_irradiance_channel=self._add_irradiance_channel,
             optical_flow=self._optical_flow,
+            cloud_mask_method = self._cloud_mask_method,
         )
 
     def train_dataloader(self):

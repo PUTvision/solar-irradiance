@@ -41,6 +41,7 @@ def train_forecaster(data_root: Path, periods_path: Path):
         add_sun_mask=cfg.datamodule.add_sun_mask,
         add_irradiance_channel=cfg.datamodule.add_irradiance_channel,
         optical_flow=cfg.datamodule.optical_flow,
+        cloud_mask_method=cfg.datamodule.cloud_mask_method,
         seed=cfg.seed,
     )
 
@@ -48,7 +49,7 @@ def train_forecaster(data_root: Path, periods_path: Path):
     # additional channel with sun position mask or irradiance value or their combination
     # 2 channels from opttical flow (X, Y directions)
     optical_flow_channels = 0 if cfg.datamodule.optical_flow is None else 2
-    input_channels = 3 + int(cfg.datamodule.add_sun_mask or cfg.datamodule.add_irradiance_channel) + optical_flow_channels
+    input_channels = 3 + int(cfg.datamodule.add_sun_mask or cfg.datamodule.add_irradiance_channel) + int(bool(cfg.datamodule.cloud_mask_method)) + optical_flow_channels
 
     model = Forecaster(
         model_name=cfg.model.model_name,
@@ -103,8 +104,9 @@ def train_forecaster(data_root: Path, periods_path: Path):
     )
 
     if not cfg.test_only:
-        log.info('Compiling model')
-        model = torch.compile(model)
+        if cfg.model.compile:
+            log.info('Compiling model')
+            model = torch.compile(model)
 
         log.info('Starting training process')
         trainer.fit(model, datamodule)
