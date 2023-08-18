@@ -12,6 +12,7 @@ from sklearn.metrics import mean_absolute_percentage_error
 from tqdm import tqdm
 
 from solar_irradiance.datamodules.sun_mask import SunMask
+from solar_irradiance.datamodules.cloud_mask import CloudMask
 
 
 fromat = "[%(levelname)s] [%(module)s] %(message)s"
@@ -70,10 +71,11 @@ def preprocess(img_data: np.ndarray) -> np.ndarray:
 @click.option("--dims", help="Model dimensions: 3 for 3D, 2 for 2D models", type=int, default=2)
 @click.option("--add_sun_mask", help="Add sun mask to input data", is_flag=True)
 @click.option("--add_irradiance_channel", help="Add irradiance channel to input data", is_flag=True)
+@click.option("--cloud_mask_method", help="Cloud segmentation method", type=click.Choice(["blue_red_ratio", "blue_red_difference", "normalized_blue_red_ratio"]), default=None)
 @click.option("--optical_flow", help="Add optical flow to input data", type=click.Choice(["dis", "farneback", "deep_flow", "pca_flow", "dual_tvl1", "dense_rlof"]), default=None)
 @click.option("--eval_periods_path", help="Data frame with evaluation periods", type=click.Path(exists=True, file_okay=True), default="data/Eval/eval_periods.pickle")
 @click.option("--dataset_path", help="Path to dataset image directory", type=click.Path(exists=True, dir_okay=True), default="data/Eval/images")
-def main(model_path, dims, provider, add_sun_mask, add_irradiance_channel, optical_flow, eval_periods_path, dataset_path):
+def main(model_path, dims, provider, add_sun_mask, add_irradiance_channel, cloud_mask_method, optical_flow, eval_periods_path, dataset_path):
     of = OPTICAL_FLOWS.get(optical_flow)
     input_shape = (384, 384)
 
@@ -81,6 +83,9 @@ def main(model_path, dims, provider, add_sun_mask, add_irradiance_channel, optic
         eval_periods = pd.read_pickle(f)
 
     sun_mask_gen = SunMask(LATITUDE, LONGITUDE, CAMERA_ORIENTATION_COMPENSATION, FOCAL_LENGTH)
+
+    if cloud_mask_method is not None:
+        cloud_mask = CloudMask(shape=input_shape, method=cloud_mask_method)
 
     inference_provider = PROVIDERS[provider]
 
@@ -105,6 +110,7 @@ def main(model_path, dims, provider, add_sun_mask, add_irradiance_channel, optic
     process_time = 0.0
     sun_mask_time = 0.0
     irr_channel_time = 0.0
+    cloud_mask_time = 0.0
     optical_flow_time = 0.0
 
     for p in tqdm(eval_periods):
@@ -136,6 +142,12 @@ def main(model_path, dims, provider, add_sun_mask, add_irradiance_channel, optic
                 else:
                     input_data = np.concatenate([input_data, np.ones((1, *input_shape), dtype=np.float32) * irradiance], axis=0)
                 irr_channel_time += time.time() - irr_channel_start
+
+            if cloud_mask_method is not None:
+                cloud_mask_start = time.time()
+                mask = cloud_mask(image=source_image)
+                input_data = np.concatenate([input_data, np.transpose(mask, (2, 0, 1))], axis=0)
+                cloud_mask_time += time.time() - cloud_mask_start
 
             if optical_flow is not None:
                 of_time_start = time.time()
@@ -173,6 +185,7 @@ def main(model_path, dims, provider, add_sun_mask, add_irradiance_channel, optic
     log.info(f"Process frames per second [img/s]: {periods_num / process_time}")
     log.info(f"Sun mask generation average time [s]: {sun_mask_time / periods_num}")
     log.info(f"Irradiance channel addition average time [s]: {irr_channel_time / periods_num}")
+    log.info(f"Cloud mask average time [s]: {cloud_mask_time / periods_num}")
     log.info(f"Optical flow average time [s]: {optical_flow_time / periods_num}")
 
     mape = mean_absolute_percentage_error(target_irradiances, outputs)
