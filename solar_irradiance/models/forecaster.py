@@ -1,17 +1,16 @@
-from typing import Optional
+from typing import Optional, List
 
 import lightning.pytorch as pl
 import timm
 import torch
 import torchmetrics
 from torch.optim import Optimizer
-from torchvision.models.video import R3D_18_Weights, swin3d_t, Swin3D_T_Weights, Swin3D_B_Weights, MC3_18_Weights, R2Plus1D_18_Weights
-from transformers import TimesformerConfig, TimesformerModel, TimesformerForVideoClassification
+from torchvision.models.video import R3D_18_Weights, Swin3D_T_Weights, Swin3D_S_Weights, Swin3D_B_Weights, MC3_18_Weights, R2Plus1D_18_Weights
+from transformers import TimesformerConfig, TimesformerModel, VideoMAEConfig, VideoMAEModel, VivitConfig, VivitModel
 
 from solar_irradiance.losses.mape import MAPELoss
 from solar_irradiance.models.architectures.resnet import r3d_18, mc3_18, r2plus1d_18
-from solar_irradiance.models.architectures.swin_transformer import swin3d_b
-# from solar_irradiance.models.architectures.timesformer import Timesformer
+from solar_irradiance.models.architectures.swin_transformer import swin3d_b, swin3d_t, swin3d_s
 
 
 class Forecaster(pl.LightningModule):
@@ -22,7 +21,8 @@ class Forecaster(pl.LightningModule):
                  lr: float,
                  lr_patience: int,
                  time_window: int,
-                 history_size: int
+                 history_size: int,
+                 image_size: List[int],
                  ):
         super().__init__()
 
@@ -31,9 +31,19 @@ class Forecaster(pl.LightningModule):
         self._loss_function = loss_function
         self._lr = lr
         self._lr_patience = lr_patience
+        self._history_size = history_size
+        self._image_size = image_size
 
         if model_name == 'swin3d_b':
             self.network = swin3d_b(weights=Swin3D_B_Weights.KINETICS400_IMAGENET22K_V1, progress=True)
+            self.num_features = self.network.num_features
+            self.network.head = torch.nn.Identity()
+        elif model_name == 'swin3d_t':
+            self.network = swin3d_t(weights=Swin3D_T_Weights.KINETICS400_V1, progress=True)
+            self.num_features = self.network.num_features
+            self.network.head = torch.nn.Identity()
+        elif model_name == 'swin3d_s':
+            self.network = swin3d_s(weights=Swin3D_S_Weights.KINETICS400_V1, progress=True)
             self.num_features = self.network.num_features
             self.network.head = torch.nn.Identity()
         elif model_name == 'r3d_18':
@@ -48,6 +58,27 @@ class Forecaster(pl.LightningModule):
             self.network = r2plus1d_18(weights=R2Plus1D_18_Weights.KINETICS400_V1, progress=True, in_channels=self._input_channels)
             self.num_features = self.network.fc.in_features
             self.network.fc = torch.nn.Identity()
+        elif model_name == 'timesformer':
+            config = TimesformerConfig()
+            config.num_channels = self._input_channels
+            config.image_size = self._image_size[0]
+            config.num_frames = self._history_size
+            self.network = TimesformerModel.from_pretrained("facebook/timesformer-base-finetuned-k400", config=config, ignore_mismatched_sizes=True)
+            self.num_features = config.hidden_size
+        elif model_name == 'videomae':
+            config =  VideoMAEConfig()
+            config.num_channels = self._input_channels
+            config.image_size = self._image_size[0]
+            config.num_frames = self._history_size
+            self.network = VideoMAEModel.from_pretrained("MCG-NJU/videomae-base-finetuned-kinetics", config=config, ignore_mismatched_sizes=True)
+            self.num_features = config.hidden_size
+        elif model_name == 'vivit':
+            config =  VivitConfig()
+            config.num_channels = self._input_channels
+            config.image_size = self._image_size[0]
+            config.num_frames = self._history_size
+            self.network = VivitModel.from_pretrained("google/vivit-b-16x2-kinetics400", config=config, ignore_mismatched_sizes=True)
+            self.num_features = config.hidden_size
         elif model_name.startswith('timm-'):
             self.network = timm.create_model(
                 model_name.replace('timm-', ''),
@@ -59,15 +90,11 @@ class Forecaster(pl.LightningModule):
             self.network.fc = torch.nn.Identity()
 
         self.num_features += 4  # Add 4 historical irradiances
-        self.hidden_size = 256
-        self.lstm = torch.nn.LSTM(input_size=self.num_features, hidden_size=self.hidden_size, num_layers=1, batch_first=True)
         self.network_head = torch.nn.Sequential(
-            # torch.nn.Linear(self.num_features, 256),
+            torch.nn.Linear(self.num_features, 256),
             torch.nn.ReLU(inplace=False),
             torch.nn.Linear(256, 1),
         )
-
-        self.hidden_cell = (torch.zeros(1, 16, self.hidden_size).to(device='cuda'), torch.zeros(1, 16, self.hidden_size).to(device='cuda'))
 
         if loss_function == 'MSE':
             self.loss = torch.nn.MSELoss()
@@ -97,13 +124,8 @@ class Forecaster(pl.LightningModule):
 
     def forward(self, x: torch.Tensor, irradiance_history: torch.Tensor) -> torch.Tensor:
         x = self.network(x)
-
-        # irradiance_history = irradiance_history.unsqueeze(1).expand(-1, x.shape[1], -1)
-        # x = torch.cat((x.unsqueeze(2), irradiance_history), dim=2)
-        x = torch.cat((x.unsqueeze(1), irradiance_history.unsqueeze(1)), dim=2)
-        # x = torch.cat([x, irradiance_history], dim=0)
-        x, _ = self.lstm(x)
-        x = self.network_head(x.view(-1, self.hidden_size))
+        x = x[0][:, 0]
+        x = self.network_head(torch.cat([x, irradiance_history], dim=1))
         return x
 
     def training_step(self, batch: torch.Tensor, batch_idx: int) -> Optional[torch.Tensor]:

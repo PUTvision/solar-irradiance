@@ -58,7 +58,8 @@ def train_forecaster(data_root: Path, periods_path: Path):
         lr=cfg.model.lr,
         lr_patience=cfg.model.lr_patience,
         time_window=data_cfg.time_window,
-        history_size=data_cfg.history_size
+        history_size=data_cfg.history_size,
+        image_size=cfg.datamodule.image_size,
     )
 
     checkpoint_callback = ModelCheckpoint(**cfg.callbacks.model_checkpoint)
