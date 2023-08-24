@@ -7,7 +7,7 @@
 NVIDIA Jetson Orin Nano was configured with newest [JetPack 5.1.1](https://developer.nvidia.com/embedded/jetpack), following [Getting Started Guide](https://developer.nvidia.com/embedded/learn/get-started-jetson-orin-nano-devkit) and [User Guide](https://developer.nvidia.com/embedded/learn/jetson-orin-nano-devkit-user-guide/index.html).
 
 Device configuration:
-- hostname: `put-orin-nano`
+- hostname: `jetson-orin-nano`
 - username: `put`
 - password: `put`
 
@@ -44,3 +44,20 @@ Intel MYRIAD VPU as a co-processor extends computational capabilities of Intel N
   <img width=200 src="https://advdownload.advantech.com/productfile/PIS/VEGA-320/Product%20-%20Photo(B)/VEGA-320_3D_S20200327134445.jpg" />
 </p>
 
+
+### [Raspberry Pi 4B](https://www.raspberrypi.com/products/raspberry-pi-4-model-b/specifications/)
+
+Raspberry Pi 4B with 2GB of RAM and a 64-bit operating system (Raspberry Pi OS) was selected and configured with [**ONNX Runtime**](https://onnxruntime.ai/docs/build/eps.html#openvino).
+
+<p align="center">
+  <img width=400 src="https://cdn.forbot.pl/blog/wp-content/uploads/2019/06/RaspberryPi4_widok_przod.jpg" />
+</p>
+
+
+### [Intel MYRIAD VPU (Neural Compute Stick 2)](https://www.intel.com/content/www/us/en/developer/articles/tool/neural-compute-stick.html)
+
+Intel MYRIAD VPU as a co-processor extends computational capabilities of Raspberry Pi. I was configured with [**ONNX Runtime**](https://onnxruntime.ai/docs/build/eps.html#openvino) backed by [**OpenVINO**](https://docs.openvino.ai/2023.0/openvino_docs_install_guides_overview.html?ENVIRONMENT=DEV_TOOLS&OP_SYSTEM=WINDOWS&VERSION=v_2023_0_1&DISTRIBUTION=PIP) with MYRIAD VPU support.
+
+<p align="center">
+  <img width=400 src="https://www.intel.com/content/dam/develop/public/us/en/images/hardware/hardware-banner-ncs2-16x9.png" />
+</p>

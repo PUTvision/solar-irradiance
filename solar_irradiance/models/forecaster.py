@@ -5,11 +5,11 @@ import timm
 import torch
 import torchmetrics
 from torch.optim import Optimizer
-from torchvision.models.video import R3D_18_Weights, swin3d_t, Swin3D_T_Weights, Swin3D_B_Weights, MC3_18_Weights
+from torchvision.models.video import R3D_18_Weights, swin3d_t, Swin3D_T_Weights, Swin3D_B_Weights, MC3_18_Weights, R2Plus1D_18_Weights
 from transformers import TimesformerConfig, TimesformerModel, TimesformerForVideoClassification
 
 from solar_irradiance.losses.mape import MAPELoss
-from solar_irradiance.models.architectures.resnet import r3d_18, mc3_18
+from solar_irradiance.models.architectures.resnet import r3d_18, mc3_18, r2plus1d_18
 from solar_irradiance.models.architectures.swin_transformer import swin3d_b
 # from solar_irradiance.models.architectures.timesformer import Timesformer
 
@@ -34,27 +34,19 @@ class Forecaster(pl.LightningModule):
 
         if model_name == 'swin3d_b':
             self.network = swin3d_b(weights=Swin3D_B_Weights.KINETICS400_IMAGENET22K_V1, progress=True)
+            self.num_features = self.network.num_features
             self.network.head = torch.nn.Identity()
-            self.network_head = torch.nn.Sequential(
-                torch.nn.Linear(self.network.num_features + 4, 256),
-                torch.nn.ReLU(inplace=True),
-                torch.nn.Linear(256, 1),
-            )
         elif model_name == 'r3d_18':
             self.network = r3d_18(weights=R3D_18_Weights.KINETICS400_V1, progress=True, in_channels=self._input_channels)
-            self.network_head = torch.nn.Sequential(
-                torch.nn.Linear(self.network.fc.in_features + 4, 256),
-                torch.nn.ReLU(inplace=True),
-                torch.nn.Linear(256, 1),
-            )
+            self.num_features = self.network.fc.in_features
             self.network.fc = torch.nn.Identity()
         elif model_name == 'mc3_18':
             self.network = mc3_18(weights=MC3_18_Weights.KINETICS400_V1, progress=True, in_channels=self._input_channels)
-            self.network_head = torch.nn.Sequential(
-                torch.nn.Linear(self.network.fc.in_features + 4, 256),
-                torch.nn.ReLU(inplace=True),
-                torch.nn.Linear(256, 1),
-            )
+            self.num_features = self.network.fc.in_features
+            self.network.fc = torch.nn.Identity()
+        elif model_name == 'r2plus1d_18':
+            self.network = r2plus1d_18(weights=R2Plus1D_18_Weights.KINETICS400_V1, progress=True, in_channels=self._input_channels)
+            self.num_features = self.network.fc.in_features
             self.network.fc = torch.nn.Identity()
         elif model_name.startswith('timm-'):
             self.network = timm.create_model(
@@ -63,12 +55,15 @@ class Forecaster(pl.LightningModule):
                 num_classes=1,
                 in_chans=self._input_channels,
             )
-            self.network_head = torch.nn.Sequential(
-                torch.nn.Linear(self.network.fc.in_features + 4, 256),
-                torch.nn.ReLU(inplace=True),
-                torch.nn.Linear(256, 1),
-            )
+            self.num_features = self.network.fc.in_features
             self.network.fc = torch.nn.Identity()
+
+        self.num_features += 4  # Add 4 historical irradiances
+        self.network_head = torch.nn.Sequential(
+            torch.nn.Linear(self.num_features, 256),
+            torch.nn.ReLU(inplace=False),
+            torch.nn.Linear(256, 1),
+        )
 
         if loss_function == 'MSE':
             self.loss = torch.nn.MSELoss()
