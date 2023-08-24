@@ -30,12 +30,12 @@ train_forecaster:
   #### TRAINER ####
   trainer:
     devices: 1
-    precision: bf16-mixed
+    precision: 16-mixed
     max_epochs: 1000
 
   #### MODEL ####
   model:
-    model_name:  vivit
+    model_name: movinet
     compile: False
     loss_function: MAE
     lr: 3e-4

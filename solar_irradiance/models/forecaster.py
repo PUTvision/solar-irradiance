@@ -4,6 +4,8 @@ import lightning.pytorch as pl
 import timm
 import torch
 import torchmetrics
+from movinets import MoViNet
+from movinets.config import _C
 from torch.optim import Optimizer
 from torchvision.models.video import R3D_18_Weights, Swin3D_T_Weights, Swin3D_S_Weights, Swin3D_B_Weights, MC3_18_Weights, R2Plus1D_18_Weights
 from transformers import TimesformerConfig, TimesformerModel, VideoMAEConfig, VideoMAEModel, VivitConfig, VivitModel
@@ -79,6 +81,16 @@ class Forecaster(pl.LightningModule):
             config.num_frames = self._history_size
             self.network = VivitModel.from_pretrained("google/vivit-b-16x2-kinetics400", config=config, ignore_mismatched_sizes=True)
             self.num_features = config.hidden_size
+        elif model_name == 'movinet':
+            self.conv_stem = torch.nn.Sequential(
+                torch.nn.Conv3d(in_channels=self._input_channels, out_channels=3, kernel_size=3, padding='same'),
+                torch.nn.ReLU(inplace=False),
+            )
+            config = _C.MODEL.MoViNetA4
+            # config['conv1']['input_channels'] = self._input_channels
+            self.network = MoViNet(config, causal=False, pretrained=True)
+            self.num_features = self.network.classifier[0].conv_1.conv3d.in_channels
+            self.network.classifier = torch.nn.Identity()
         elif model_name.startswith('timm-'):
             self.network = timm.create_model(
                 model_name.replace('timm-', ''),
@@ -123,8 +135,9 @@ class Forecaster(pl.LightningModule):
         optimizer.zero_grad(set_to_none=True)
 
     def forward(self, x: torch.Tensor, irradiance_history: torch.Tensor) -> torch.Tensor:
+        x = self.conv_stem(x)
         x = self.network(x)
-        x = x[0][:, 0]
+        # x = x[0][:, 0]
         x = self.network_head(torch.cat([x, irradiance_history], dim=1))
         return x
 
