@@ -4,6 +4,7 @@ import lightning.pytorch as pl
 import timm
 import torch
 import torchmetrics
+from mmaction.models.backbones import MViT
 from movinets import MoViNet
 from movinets.config import _C
 from torch.optim import Optimizer
@@ -81,6 +82,15 @@ class Forecaster(pl.LightningModule):
             config.num_frames = self._history_size
             self.network = VivitModel.from_pretrained("google/vivit-b-16x2-kinetics400", config=config, ignore_mismatched_sizes=True)
             self.num_features = config.hidden_size
+        elif model_name == 'mvit':
+            self.network = MViT(
+                spatial_size=self._image_size[0],
+                temporal_size=self._history_size,
+                in_channels=self._input_channels,
+                pretrained='mvit-small-p244_32xb16-16x4x1-200e_kinetics400-rgb',
+                pretrained_type='imagenet',
+            )
+            self.num_features = self.network.norm3.normalized_shape[0]
         elif model_name == 'movinet':
             self.conv_stem = torch.nn.Sequential(
                 torch.nn.Conv3d(in_channels=self._input_channels, out_channels=3, kernel_size=3, padding='same'),
@@ -135,9 +145,10 @@ class Forecaster(pl.LightningModule):
         optimizer.zero_grad(set_to_none=True)
 
     def forward(self, x: torch.Tensor, irradiance_history: torch.Tensor) -> torch.Tensor:
-        x = self.conv_stem(x)
+        # x = self.conv_stem(x)
         x = self.network(x)
         # x = x[0][:, 0]
+        x = x[0][1]
         x = self.network_head(torch.cat([x, irradiance_history], dim=1))
         return x
 
