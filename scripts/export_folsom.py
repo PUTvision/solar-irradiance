@@ -8,11 +8,12 @@ from tqdm import tqdm
 
 @click.command()
 @click.option('--cleaned-dataframe-path', type=click.Path(exists=True, path_type=Path), required=True)
-@click.option('--history-size', type=int, required=True)
-@click.option('--time-window', type=int, required=True)
 @click.option('--output-path', type=click.Path(path_type=Path), required=True)
+@click.option('--history-size', type=int, default=4)
+@click.option('--time-window', type=int, default=15)
 def export_folsom(cleaned_dataframe_path: Path, history_size: int, time_window: int, output_path: Path):
-    time_window += history_size
+    history_size -= 1 # history samples without sample from t time
+    period = time_window // history_size
 
     periods = []
 
@@ -26,20 +27,18 @@ def export_folsom(cleaned_dataframe_path: Path, history_size: int, time_window: 
 
     for t, _ in tqdm(df.iterrows(), total=len(df)):
         t = pd.Timestamp(t)
-        t_m15 = t - pd.Timedelta(minutes=15)
-        t_m10 = t - pd.Timedelta(minutes=10)
-        t_m5 = t - pd.Timedelta(minutes=5)
-        t_p15 = t + pd.Timedelta(minutes=15)
+        t_history = [t - pd.Timedelta(minutes=period*i) for i in range(history_size, 0, -1)]
+        t_target = t + pd.Timedelta(minutes=time_window)
 
-        if all(map(lambda x: x in df.index, [t_m15, t_m10, t_m5, t_p15])):
+        if all(map(lambda x: x in df.index, [*t_history, t_target])):
             periods.append({
                 'history': [
                     {
                         'image_name': df.loc[_t]['image_name'],
                         'irradiance': df.loc[_t]['irradiance']
-                    } for _t in [t_m15, t_m10, t_m5, t]
+                    } for _t in sorted([*t_history, t])
                 ],
-                'target_irradiance': df.loc[t_p15]['irradiance'],
+                'target_irradiance': df.loc[t_target]['irradiance'],
             })
 
     print(f'Number of periods: {len(periods)}')

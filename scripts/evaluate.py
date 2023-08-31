@@ -25,9 +25,9 @@ LONGITUDE = -121.148
 CAMERA_ORIENTATION_COMPENSATION = 165
 FOCAL_LENGTH = 0.48
 
-MAX_IRRADIANCE = 1366.0     # max irradiance in the dataset
-IRRADIANCE_MEAN = 419.1655  # mean irradiance in the dataset
-IRRADIANCE_STD = 301.2625   # std irradiance in the dataset
+MAX_IRRADIANCE = 1466.0     # max irradiance in the dataset
+IRRADIANCE_MEAN = 412.6909  # mean irradiance in the dataset
+IRRADIANCE_STD = 295.5127   # std irradiance in the dataset
 
 OPTICAL_FLOWS = {
     "dis": cv2.DISOpticalFlow_create(preset=cv2.DISOPTICAL_FLOW_PRESET_FAST),

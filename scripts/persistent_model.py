@@ -4,9 +4,9 @@ from sklearn.metrics import mean_absolute_percentage_error
 from tqdm import tqdm
 
 
-MAX_IRRADIANCE = 1366.0     # max irradiance in the dataset
-IRRADIANCE_MEAN = 419.1655  # mean irradiance in the dataset
-IRRADIANCE_STD = 301.2625   # std irradiance in the dataset
+MAX_IRRADIANCE = 1466.0     # max irradiance in the dataset
+IRRADIANCE_MEAN = 412.6909  # mean irradiance in the dataset
+IRRADIANCE_STD = 295.5127   # std irradiance in the dataset
 
 
 @click.command()

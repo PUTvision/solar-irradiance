@@ -11,9 +11,9 @@ from torch.utils.data import Dataset
 from solar_irradiance.datamodules.sun_mask import SunMask
 from solar_irradiance.datamodules.cloud_mask import CloudMask
 
-MAX_IRRADIANCE = 1366.0  # max irradiance in the dataset
-IRRADIANCE_MEAN = 419.1655  # mean irradiance in the dataset
-IRRADIANCE_STD = 301.2625  # std irradiance in the dataset
+MAX_IRRADIANCE = 1466.0     # max irradiance in the dataset
+IRRADIANCE_MEAN = 412.6909  # mean irradiance in the dataset
+IRRADIANCE_STD = 295.5127   # std irradiance in the dataset
 
 # MAX_IRRADIANCE = 1600.0 # max irradiance from Hukseflux pyranometer
 

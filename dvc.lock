@@ -6,9 +6,9 @@ stages:
     deps:
     - path: data/Folsom
       hash: md5
-      md5: 1a067740695b101faef4ac7b7a6c721b.dir
-      size: 64100647697
-      nfiles: 775917
+      md5: 4020dc5f8fe0b4836d5f2224dadd0760.dir
+      size: 64097965386
+      nfiles: 775882
     - path: scripts/prepare_dataframe.py
       hash: md5
       md5: 2cfa55794fd4246ccbc565be563b820a
@@ -16,29 +16,29 @@ stages:
     outs:
     - path: data/Prepared/cleaned_irradiance.csv
       hash: md5
-      md5: c44050c13a72e38ad3fed9d255870f0f
-      size: 14883320
+      md5: 62cd9b98fec4bfd41b984cb0fe38e918
+      size: 40520514
   export_periods:
     cmd: python scripts/export_folsom.py --cleaned-dataframe-path data/Prepared/cleaned_irradiance.csv
-      --time-window 15 --history-size 3 --output-path data/Prepared/periods.pickle
+      --time-window 15 --history-size 4 --output-path data/Prepared/periods.pickle
     deps:
     - path: data/Prepared/cleaned_irradiance.csv
       hash: md5
-      md5: c44050c13a72e38ad3fed9d255870f0f
-      size: 14883320
+      md5: 62cd9b98fec4bfd41b984cb0fe38e918
+      size: 40520514
     - path: scripts/export_folsom.py
       hash: md5
-      md5: 7f4867fe4f7cd16a188ceaf1c37a8d12
-      size: 1770
+      md5: 779b3c0ba7e8e794a017a2c91044e775
+      size: 1807
     params:
       params.yaml:
-        export_periods.history_size: 3
+        export_periods.history_size: 4
         export_periods.time_window: 15
     outs:
     - path: data/Prepared/periods.pickle
       hash: md5
-      md5: ab55d2ce456144bae9c846b24eb19f7d
-      size: 7629468
+      md5: 9cb4a15a92b9df933eab4c178af6f420
+      size: 126987636
   train_forecaster:
     cmd: python scripts/train_forecaster.py --data-root data/Folsom --periods-path
       data/Prepared/periods.pickle
