@@ -5,8 +5,8 @@ from tqdm import tqdm
 
 
 MAX_IRRADIANCE = 1466.0     # max irradiance in the dataset
-IRRADIANCE_MEAN = 412.6909  # mean irradiance in the dataset
-IRRADIANCE_STD = 295.5127   # std irradiance in the dataset
+IRRADIANCE_MEAN = 412.7034  # mean irradiance in the dataset
+IRRADIANCE_STD = 295.5182   # std irradiance in the dataset
 
 
 @click.command()
