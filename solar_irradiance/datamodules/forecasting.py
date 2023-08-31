@@ -2,10 +2,10 @@ from pathlib import Path
 from typing import Tuple, Union
 
 import albumentations as A
+import numpy as np
 import pandas as pd
 import torch.utils.data
 from lightning import LightningDataModule
-from sklearn.model_selection import train_test_split
 
 from solar_irradiance.datamodules.datasets.folsom_forecasting_dataset import FolsomForecastingDataset
 
@@ -62,8 +62,18 @@ class ForecastingDataModule(LightningDataModule):
         with self._periods_path.open('rb') as f:
             periods = pd.read_pickle(f)
 
-        train_periods, val_periods = train_test_split(periods, test_size=0.2, random_state=self._seed, shuffle=True)
-        val_periods, test_periods = train_test_split(val_periods, test_size=0.5, random_state=self._seed, shuffle=True)
+        test_periods = list(filter(lambda p: p['history'][-1]['image_name'].startswith('2014'), periods))
+        train_val_periods = list(filter(lambda p: not p['history'][-1]['image_name'].startswith('2014'), periods))
+
+        size = 170 # number of days for validatation dataset to get 80-20 ratio of train-val datasets
+        np.random.seed(self._seed)
+        val_dates = [str(y) + str(m).zfill(2) + str(d).zfill(2) for y, m, d in zip(
+            np.random.randint(2015, 2017, size=size),
+            np.random.randint(1, 13, size=size),
+            np.random.randint(1, 29, size=size),
+        )]
+        val_periods = list(filter(lambda p: p['history'][-1]['image_name'][:8] in val_dates, train_val_periods))
+        train_periods = list(filter(lambda p: p['history'][-1]['image_name'][:8] not in val_dates, train_val_periods))
 
         self._train_dataset = FolsomForecastingDataset(
             data_root=self._data_root,
