@@ -4,7 +4,7 @@ import lightning.pytorch as pl
 import timm
 import torch
 import torchmetrics
-from mmaction.models.backbones import MViT
+from mmaction.models.backbones import MViT, UniFormerV2
 from movinets import MoViNet
 from movinets.config import _C
 from torch.optim import Optimizer
@@ -91,14 +91,19 @@ class Forecaster(pl.LightningModule):
                 pretrained_type='imagenet',
             )
             self.num_features = self.network.norm3.normalized_shape[0]
-        elif model_name == 'movinet':
-            self.conv_stem = torch.nn.Sequential(
-                torch.nn.Conv3d(in_channels=self._input_channels, out_channels=3, kernel_size=3, padding='same'),
-                torch.nn.ReLU(inplace=False),
+        elif model_name == 'uniformerv2':
+            self.network = UniFormerV2(
+                input_resolution=self._image_size[0],
+                t_size=self._history_size,
+                pretrained='uniformerv2-base-p16-res224_clip_8xb32-u8_kinetics400-rgb',
             )
+            self.network.conv1 = torch.nn.Conv3d(in_channels=4, out_channels=768, kernel_size=(1, 16, 16), stride=(1, 16, 16), bias=False)
+            self.num_features = self.network.transformer.norm.normalized_shape[0]
+        elif model_name == 'movinet':
             config = _C.MODEL.MoViNetA4
-            # config['conv1']['input_channels'] = self._input_channels
             self.network = MoViNet(config, causal=False, pretrained=True)
+            self.network.conv1.conv_1.conv3d = torch.nn.Conv3d(
+                in_channels=self._input_channels, out_channels=24, kernel_size=(1, 3, 3), stride=(1, 2, 2), bias=False)
             self.num_features = self.network.classifier[0].conv_1.conv3d.in_channels
             self.network.classifier = torch.nn.Identity()
         elif model_name.startswith('timm-'):
@@ -145,10 +150,9 @@ class Forecaster(pl.LightningModule):
         optimizer.zero_grad(set_to_none=True)
 
     def forward(self, x: torch.Tensor, irradiance_history: torch.Tensor) -> torch.Tensor:
-        # x = self.conv_stem(x)
         x = self.network(x)
         # x = x[0][:, 0]
-        x = x[0][1]
+        # x = x[0][1]
         x = self.network_head(torch.cat([x, irradiance_history], dim=1))
         return x
 
