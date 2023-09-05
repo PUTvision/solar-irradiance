@@ -11,15 +11,17 @@ IRRADIANCE_STD = 295.5182   # std irradiance in the dataset
 
 
 @click.command()
-@click.option("--eval_periods_path", help="Data frame with evaluation periods", type=click.Path(exists=True, file_okay=True), default="data/Eval/eval_periods.pickle")
-def evaluate_persistent_model(eval_periods_path):
-    with open(eval_periods_path, "rb") as f:
-        eval_periods = pd.read_pickle(f)
+@click.option("--periods_path", help="Data frame with evaluation periods", type=click.Path(exists=True, file_okay=True), default="data/Prepared/periods.pickle")
+def evaluate_persistent_model(periods_path):
+    with open(periods_path, "rb") as f:
+        periods = pd.read_pickle(f)
+        
+    test_periods = list(filter(lambda p: p['history'][-1]['image_name'].startswith('2014'), periods))
 
     target = []
     preds = []
 
-    for p in tqdm(eval_periods):
+    for p in tqdm(test_periods):
         source_irradiances = []
 
         for history_item in p["history"]:
@@ -39,9 +41,9 @@ def evaluate_persistent_model(eval_periods_path):
     mse = mean_squared_error(preds, target)
     rmse = mean_squared_error(preds, target, squared=False)
     print(f"MAPE [%]: {mape*100:.2f}")
-    print(f"MAE [W/m^2]: {mae*MAX_IRRADIANCE:.4f}")
-    print(f"MSE (normalized): {mse:.4f}")
-    print(f"RMSE [W/m^2]: {rmse*MAX_IRRADIANCE:.4f}")
+    print(f"MAE [W/m^2]: {mae*MAX_IRRADIANCE}")
+    print(f"MSE (normalized): {mse}")
+    print(f"RMSE [W/m^2]: {rmse*MAX_IRRADIANCE}")
 
 
 if __name__ == '__main__':
