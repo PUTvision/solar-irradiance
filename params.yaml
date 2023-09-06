@@ -31,12 +31,12 @@ train_forecaster:
   trainer:
     devices: 1
     precision: 16-mixed
-    max_epochs: 1000
+    max_epochs: 100
 
   #### MODEL ####
   model:
-    model_name: movinet
-    compile: False
+    model_name: timm-resnet50
+    compile: True
     loss_function: MAE
     lr: 3e-4
     lr_patience: 5
@@ -55,18 +55,19 @@ train_forecaster:
     early_stopping:
       monitor: "val_MeanAbsolutePercentageError" # name of the logged metric which determines when model is improving
       mode: "min" # can be "max" or "min"
-      patience: 20 # how many validation epochs of not improving until training stops
+      patience: 10 # how many validation epochs of not improving until training stops
       min_delta: 0 # minimum change in the monitored metric needed to qualify as an improvement
 
   #### DATA ####
   datamodule:
     augment: False
+    train_val_set_size: 0.1 # size of the train and validation sets for experiments in relation to overall size; 0-1 range
     image_size: [ 384, 384 ]
     image_mean: [ 0.43216, 0.394666, 0.3764 ]
     image_std: [ 0.22803, 0.22145, 0.21698 ]
     batch_size: 16
     workers: 32
     add_sun_mask: True
-    add_irradiance_channel: True
+    add_irradiance_channel: False
     cloud_mask_method: null # available: null, blue_red_ratio, blue_red_difference, normalized_blue_red_ratio
     optical_flow: null # available: null, dis, farneback, deep_flow, pca_flow, dual_tvl1, dense_rlof

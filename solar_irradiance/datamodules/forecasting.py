@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import torch.utils.data
 from lightning import LightningDataModule
+from sklearn.model_selection import train_test_split
 
 from solar_irradiance.datamodules.datasets.folsom_forecasting_dataset import FolsomForecastingDataset
 
@@ -16,6 +17,7 @@ class ForecastingDataModule(LightningDataModule):
             root_data_path: Path,
             periods_path: Path,
             augment: bool,
+            train_val_set_size: float,
             image_size: Tuple[int, int],
             image_mean: Tuple[float, float, float],
             image_std: Tuple[float, float, float],
@@ -33,6 +35,7 @@ class ForecastingDataModule(LightningDataModule):
         self._periods_path = Path(periods_path)
         self._dataset_name = self._data_root.name
         self._augment = augment
+        self._train_val_set_size = train_val_set_size
         self._batch_size = batch_size
         self._workers = workers
         self._add_sun_mask = add_sun_mask
@@ -74,6 +77,10 @@ class ForecastingDataModule(LightningDataModule):
         )]
         val_periods = list(filter(lambda p: p['history'][-1]['image_name'][:8] in val_dates, train_val_periods))
         train_periods = list(filter(lambda p: p['history'][-1]['image_name'][:8] not in val_dates, train_val_periods))
+
+        if self._train_val_set_size < 1:
+            val_periods, __ = train_test_split(val_periods, train_size=self._train_val_set_size, random_state=self._seed)
+            train_periods, __ = train_test_split(train_periods, train_size=self._train_val_set_size, random_state=self._seed)
 
         self._train_dataset = FolsomForecastingDataset(
             data_root=self._data_root,

@@ -33,6 +33,7 @@ def train_forecaster(data_root: Path, periods_path: Path):
         root_data_path=data_root,
         periods_path=periods_path,
         augment=cfg.datamodule.augment,
+        train_val_set_size=cfg.datamodule.train_val_set_size,
         image_size=cfg.datamodule.image_size,
         image_mean=cfg.datamodule.image_mean,
         image_std=cfg.datamodule.image_std,
