@@ -1,4 +1,3 @@
-from datetime import datetime
 from pathlib import Path
 
 import click
@@ -12,9 +11,15 @@ from tqdm import tqdm
 @click.option('--data-root', type=click.Path(exists=True, path_type=Path), required=True)
 @click.option('--output-path', type=click.Path(path_type=Path), required=True)
 def prepare_dataframe(data_root: Path, output_path: Path):
-    df = pd.read_csv(data_root / 'irradiance.csv', parse_dates={'datetime': ['date']},
-                     index_col='datetime', date_format='%Y%m%d_%H%M%S')
-    existing_images = {datetime.strptime(image_path.stem, '%Y%m%d_%H%M%S') for image_path in data_root.rglob('*.jpg')}
+    df = pd.read_csv(
+        data_root / 'irradiance.csv',
+        parse_dates={'datetime': ['date']},
+        index_col='datetime',
+        date_format='%Y%m%d_%H%M%S',
+    ).tz_localize('UTC').tz_convert('US/Pacific')
+    existing_images = {
+        pd.to_datetime(image_path.stem, format='%Y%m%d_%H%M%S').tz_localize('US/Pacific') for image_path in data_root.rglob('*.jpg')
+    }
     print(f'Existing images: {len(existing_images)}')
 
     filtered_images = set()
@@ -31,6 +36,7 @@ def prepare_dataframe(data_root: Path, output_path: Path):
     print(f'Filtered images: {len(filtered_images)}')
     df = df.loc[df.index.isin(filtered_images)]
     df['image_name'] = df.index.strftime('%Y%m%d_%H%M%S') + '.jpg'
+    print(f'Data samples: {len(df)}')
     df.to_csv(output_path)
 
 
