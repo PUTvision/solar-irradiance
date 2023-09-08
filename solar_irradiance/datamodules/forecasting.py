@@ -36,6 +36,7 @@ class ForecastingDataModule(LightningDataModule):
         self._dataset_name = self._data_root.name
         self._augment = augment
         self._train_val_set_size = train_val_set_size
+        self._image_size = image_size
         self._batch_size = batch_size
         self._workers = workers
         self._add_sun_mask = add_sun_mask
@@ -90,6 +91,7 @@ class ForecastingDataModule(LightningDataModule):
             add_irradiance_channel=self._add_irradiance_channel,
             optical_flow=self._optical_flow,
             cloud_mask_method = self._cloud_mask_method,
+            image_size=self._image_size,
         )
         self._val_dataset = FolsomForecastingDataset(
             data_root=self._data_root,
@@ -99,6 +101,7 @@ class ForecastingDataModule(LightningDataModule):
             add_irradiance_channel=self._add_irradiance_channel,
             optical_flow=self._optical_flow,
             cloud_mask_method = self._cloud_mask_method,
+            image_size=self._image_size,
         )
         self._test_dataset = FolsomForecastingDataset(
             data_root=self._data_root,
@@ -108,6 +111,7 @@ class ForecastingDataModule(LightningDataModule):
             add_irradiance_channel=self._add_irradiance_channel,
             optical_flow=self._optical_flow,
             cloud_mask_method = self._cloud_mask_method,
+            image_size=self._image_size,
         )
 
     def train_dataloader(self):

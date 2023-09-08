@@ -1,7 +1,6 @@
 from pathlib import Path
 from typing import Tuple, List, Dict, Any, Union
 
-import cv2
 import numpy as np
 import torch
 from PIL import Image
@@ -12,10 +11,7 @@ from solar_irradiance.datamodules.sun_mask import SunMask
 from solar_irradiance.datamodules.cloud_mask import CloudMask
 
 MAX_IRRADIANCE = 1466.0     # max irradiance in the dataset
-IRRADIANCE_MEAN = 412.7034  # mean irradiance in the dataset
-IRRADIANCE_STD = 295.5182   # std irradiance in the dataset
-
-# MAX_IRRADIANCE = 1600.0 # max irradiance from Hukseflux pyranometer
+# MAX_IRRADIANCE = 1600.0     # max irradiance from Hukseflux pyranometer
 
 
 class FolsomForecastingDataset(Dataset):
@@ -33,6 +29,7 @@ class FolsomForecastingDataset(Dataset):
             add_irradiance_channel: bool,
             optical_flow: Union[None, str],
             cloud_mask_method: Union[None, str],
+            image_size: Tuple[int, int],
     ):
         self._data_root = data_root
         self._periods = periods
@@ -42,8 +39,9 @@ class FolsomForecastingDataset(Dataset):
         self._add_irradiance_channel = add_irradiance_channel
         self._optical_flow = optical_flow
         self._cloud_mask_method = cloud_mask_method
+        self._image_size = image_size
         if self._cloud_mask_method is not None:
-            self._cloud_mask = CloudMask(shape=(384, 384), method=cloud_mask_method)
+            self._cloud_mask = CloudMask(shape=self._image_size, method=cloud_mask_method)
 
     def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         period = self._periods[index]
@@ -51,8 +49,6 @@ class FolsomForecastingDataset(Dataset):
         source_images = []
         source_irradiances = []
         replay_data = None
-        flow = None
-        prev_image_gray = None
 
         for history_idx, history_item in enumerate(period['history']):
             image_path = self._data_root / 'images' / history_item['image_name']
@@ -86,8 +82,8 @@ class FolsomForecastingDataset(Dataset):
                 flow_x_path = self._data_root.parent / 'flows' / self._optical_flow / history_item['image_name'].replace('.jpg', '_x.tiff')
                 flow_y_path = self._data_root.parent / 'flows' / self._optical_flow / history_item['image_name'].replace('.jpg', '_y.tiff')
 
-                flow_x = np.asarray(Image.open(flow_x_path))
-                flow_y = np.asarray(Image.open(flow_y_path))
+                flow_x = np.asarray(Image.open(flow_x_path).resize(self._image_size))
+                flow_y = np.asarray(Image.open(flow_y_path).resize(self._image_size))
 
                 torch_image = torch.cat([torch_image, torch.from_numpy(flow_x).unsqueeze(0), torch.from_numpy(flow_y).unsqueeze(0)], dim=0)
 
