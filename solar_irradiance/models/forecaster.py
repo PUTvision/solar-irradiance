@@ -4,14 +4,14 @@ import lightning.pytorch as pl
 import timm
 import torch
 import torchmetrics
-from mmaction.models.backbones import MViT, UniFormerV2
-from movinets import MoViNet
-from movinets.config import _C
+# from mmaction.models.backbones import MViT, UniFormerV2
+# from movinets import MoViNet
+# from movinets.config import _C
 from torch.optim import Optimizer
 from torchvision.models.video import R3D_18_Weights, Swin3D_T_Weights, Swin3D_S_Weights, Swin3D_B_Weights, MC3_18_Weights, R2Plus1D_18_Weights
 from transformers import TimesformerConfig, TimesformerModel, VideoMAEConfig, VideoMAEModel, VivitConfig, VivitModel
 
-from solar_irradiance.losses.mape import MAPELoss
+from solar_irradiance.losses import MAPELoss, MeanAdaptiveBerHuLoss
 from solar_irradiance.models.architectures.resnet import r3d_18, mc3_18, r2plus1d_18
 from solar_irradiance.models.architectures.swin_transformer import swin3d_b, swin3d_t, swin3d_s
 
@@ -131,6 +131,8 @@ class Forecaster(pl.LightningModule):
             self.loss = torch.nn.SmoothL1Loss()
         elif loss_function == 'MAPE':
             self.loss = MAPELoss()
+        elif loss_function == 'BerHu':
+            self.loss = MeanAdaptiveBerHuLoss()
         else:
             raise NotImplementedError(f'Unsupported loss function: {loss_function}')
 
