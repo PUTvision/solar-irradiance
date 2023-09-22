@@ -30,7 +30,7 @@ train_forecaster:
   #### TRAINER ####
   trainer:
     devices: 1
-    precision: 16-mixed
+    precision: bf16-mixed
     max_epochs: 100
 
   #### MODEL ####
@@ -44,7 +44,7 @@ train_forecaster:
   #### CALLBACKS ####
   callbacks:
     model_checkpoint:
-      monitor: "val_MeanAbsolutePercentageError" # name of the logged metric which determines when model is improving
+      monitor: "val_loss" # name of the logged metric which determines when model is improving
       mode: "min" # can be "max" or "min"
       save_top_k: 1 # save k best models (determined by above metric)
       save_last: False # additionally, always save model from last epoch
@@ -53,7 +53,7 @@ train_forecaster:
       filename: "epoch_{epoch:03d}"
       auto_insert_metric_name: False
     early_stopping:
-      monitor: "val_MeanAbsolutePercentageError" # name of the logged metric which determines when model is improving
+      monitor: "val_loss" # name of the logged metric which determines when model is improving
       mode: "min" # can be "max" or "min"
       patience: 10 # how many validation epochs of not improving until training stops
       min_delta: 0 # minimum change in the monitored metric needed to qualify as an improvement
@@ -67,7 +67,7 @@ train_forecaster:
     image_std: [ 0.22803, 0.22145, 0.21698 ]
     batch_size: 16
     workers: 32
-    add_sun_mask: True
+    add_sun_mask: False
     add_irradiance_channel: False
     cloud_mask_method: null # available: null, blue_red_ratio, blue_red_difference, normalized_blue_red_ratio
     optical_flow: null # available: null, dis, farneback, deep_flow, pca_flow, dual_tvl1, dense_rlof
