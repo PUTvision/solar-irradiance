@@ -23,9 +23,8 @@ OPTICAL_FLOWS = {
 @click.option("--periods_path", help="Data frame with evaluation periods", type=click.Path(exists=True, file_okay=True), default="data/Prepared/periods.pickle")
 @click.option("--dataset_path", help="Path to dataset image directory", type=click.Path(exists=True, dir_okay=True), default="data/Folsom/images")
 def generate_optical_flow(optical_flow, periods_path, dataset_path):
-    input_shape = (384, 384)
     periods_path = Path(periods_path)
-    Path(periods_path.parent, "flows", optical_flow).mkdir(parents=True, exist_ok=True)
+    Path(periods_path.parents[1], "flows", optical_flow).mkdir(parents=True, exist_ok=True)
     of = OPTICAL_FLOWS.get(optical_flow)
 
     with open(periods_path, "rb") as f:
@@ -44,7 +43,6 @@ def generate_optical_flow(optical_flow, periods_path, dataset_path):
         for history_item in p["history"]:
             image_path = Path(dataset_path, history_item["image_name"])
             source_image = np.asarray(Image.open(image_path))
-            source_image = cv2.resize(source_image, input_shape)
 
             if optical_flow == "dense_rlof":
                 if prev_image is None:

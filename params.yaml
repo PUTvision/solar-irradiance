@@ -5,7 +5,7 @@ clean_dataframe:
 export_periods:
   script_path: scripts/export_folsom.py
   time_window: 15
-  history_size: 3
+  history_size: 4
   output_path: data/Prepared/periods.pickle
 
 export_eval_periods:
@@ -30,13 +30,13 @@ train_forecaster:
   #### TRAINER ####
   trainer:
     devices: 1
-    precision: 16
-    max_epochs: 1000
+    precision: bf16-mixed
+    max_epochs: 100
 
   #### MODEL ####
   model:
-    model_name: timm-resnet34
-    compile: False
+    model_name: timm-resnet50
+    compile: True
     loss_function: MAE
     lr: 3e-4
     lr_patience: 5
@@ -44,7 +44,7 @@ train_forecaster:
   #### CALLBACKS ####
   callbacks:
     model_checkpoint:
-      monitor: "val_MeanAbsolutePercentageError" # name of the logged metric which determines when model is improving
+      monitor: "val_loss" # name of the logged metric which determines when model is improving
       mode: "min" # can be "max" or "min"
       save_top_k: 1 # save k best models (determined by above metric)
       save_last: False # additionally, always save model from last epoch
@@ -53,20 +53,21 @@ train_forecaster:
       filename: "epoch_{epoch:03d}"
       auto_insert_metric_name: False
     early_stopping:
-      monitor: "val_MeanAbsolutePercentageError" # name of the logged metric which determines when model is improving
+      monitor: "val_loss" # name of the logged metric which determines when model is improving
       mode: "min" # can be "max" or "min"
-      patience: 20 # how many validation epochs of not improving until training stops
+      patience: 10 # how many validation epochs of not improving until training stops
       min_delta: 0 # minimum change in the monitored metric needed to qualify as an improvement
 
   #### DATA ####
   datamodule:
     augment: False
+    train_val_set_size: 0.1 # size of the train and validation sets for experiments in relation to overall size; 0-1 range
     image_size: [ 384, 384 ]
     image_mean: [ 0.43216, 0.394666, 0.3764 ]
     image_std: [ 0.22803, 0.22145, 0.21698 ]
     batch_size: 16
     workers: 32
-    add_sun_mask: True
-    add_irradiance_channel: True
-    cloud_mask_method: "blue_red_difference" # available: null, blue_red_ratio, blue_red_difference, normalized_blue_red_ratio
-    optical_flow: "dense_rlof" # available: null, dis, farneback, deep_flow, pca_flow, dual_tvl1, dense_rlof
+    add_sun_mask: False
+    add_irradiance_channel: False
+    cloud_mask_method: null # available: null, blue_red_ratio, blue_red_difference, normalized_blue_red_ratio
+    optical_flow: null # available: null, dis, farneback, deep_flow, pca_flow, dual_tvl1, dense_rlof

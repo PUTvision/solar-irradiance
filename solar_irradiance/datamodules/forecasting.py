@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Tuple, Union
 
 import albumentations as A
+import numpy as np
 import pandas as pd
 import torch.utils.data
 from lightning import LightningDataModule
@@ -16,6 +17,7 @@ class ForecastingDataModule(LightningDataModule):
             root_data_path: Path,
             periods_path: Path,
             augment: bool,
+            train_val_set_size: float,
             image_size: Tuple[int, int],
             image_mean: Tuple[float, float, float],
             image_std: Tuple[float, float, float],
@@ -33,6 +35,8 @@ class ForecastingDataModule(LightningDataModule):
         self._periods_path = Path(periods_path)
         self._dataset_name = self._data_root.name
         self._augment = augment
+        self._train_val_set_size = train_val_set_size
+        self._image_size = image_size
         self._batch_size = batch_size
         self._workers = workers
         self._add_sun_mask = add_sun_mask
@@ -62,8 +66,22 @@ class ForecastingDataModule(LightningDataModule):
         with self._periods_path.open('rb') as f:
             periods = pd.read_pickle(f)
 
-        train_periods, val_periods = train_test_split(periods, test_size=0.2, random_state=self._seed, shuffle=True)
-        val_periods, test_periods = train_test_split(val_periods, test_size=0.5, random_state=self._seed, shuffle=True)
+        test_periods = list(filter(lambda p: p['history'][-1]['image_name'].startswith('2014'), periods))
+        train_val_periods = list(filter(lambda p: not p['history'][-1]['image_name'].startswith('2014'), periods))
+
+        size = 170 # number of days for validatation dataset to get 80-20 ratio of train-val datasets
+        np.random.seed(self._seed)
+        val_dates = [str(y) + str(m).zfill(2) + str(d).zfill(2) for y, m, d in zip(
+            np.random.randint(2015, 2017, size=size),
+            np.random.randint(1, 13, size=size),
+            np.random.randint(1, 29, size=size),
+        )]
+        val_periods = list(filter(lambda p: p['history'][-1]['image_name'][:8] in val_dates, train_val_periods))
+        train_periods = list(filter(lambda p: p['history'][-1]['image_name'][:8] not in val_dates, train_val_periods))
+
+        if self._train_val_set_size < 1:
+            val_periods, __ = train_test_split(val_periods, train_size=self._train_val_set_size, random_state=self._seed)
+            train_periods, __ = train_test_split(train_periods, train_size=self._train_val_set_size, random_state=self._seed)
 
         self._train_dataset = FolsomForecastingDataset(
             data_root=self._data_root,
@@ -73,6 +91,7 @@ class ForecastingDataModule(LightningDataModule):
             add_irradiance_channel=self._add_irradiance_channel,
             optical_flow=self._optical_flow,
             cloud_mask_method = self._cloud_mask_method,
+            image_size=self._image_size,
         )
         self._val_dataset = FolsomForecastingDataset(
             data_root=self._data_root,
@@ -82,6 +101,7 @@ class ForecastingDataModule(LightningDataModule):
             add_irradiance_channel=self._add_irradiance_channel,
             optical_flow=self._optical_flow,
             cloud_mask_method = self._cloud_mask_method,
+            image_size=self._image_size,
         )
         self._test_dataset = FolsomForecastingDataset(
             data_root=self._data_root,
@@ -91,6 +111,7 @@ class ForecastingDataModule(LightningDataModule):
             add_irradiance_channel=self._add_irradiance_channel,
             optical_flow=self._optical_flow,
             cloud_mask_method = self._cloud_mask_method,
+            image_size=self._image_size,
         )
 
     def train_dataloader(self):
