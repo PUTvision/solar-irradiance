@@ -3,7 +3,7 @@ from pathlib import Path
 import click
 import numpy as np
 import pandas as pd
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 from tqdm import tqdm
 
 
@@ -27,7 +27,7 @@ def prepare_dataframe(data_root: Path, output_path: Path):
         image_path = Path(data_root, 'images', image_name.strftime('%Y%m%d_%H%M%S') + '.jpg')
         try:
             _ = np.asarray(Image.open(image_path))
-        except:
+        except UnidentifiedImageError:
             print(f'Truncated image: {image_path}')
             continue
 

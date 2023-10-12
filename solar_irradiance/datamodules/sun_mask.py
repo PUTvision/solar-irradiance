@@ -82,7 +82,7 @@ class SunMask:
         y_sc = R * np.cos(np.deg2rad(azimuth))
 
         # convert to the image plane
-        x_scp = image_shape[1] / 2 + x_sc * image_shape[1]/2
-        y_scp = image_shape[0] / 2 + y_sc * image_shape[0]/2
+        x_scp = image_shape[1] / 2 + x_sc * image_shape[1] / 2
+        y_scp = image_shape[0] / 2 + y_sc * image_shape[0] / 2
 
         return int(x_scp), int(y_scp)

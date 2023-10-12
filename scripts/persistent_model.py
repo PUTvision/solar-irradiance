@@ -13,7 +13,7 @@ MAX_IRRADIANCE = 1466.0     # max irradiance in the dataset
 def evaluate_persistent_model(periods_path):
     with open(periods_path, "rb") as f:
         periods = pd.read_pickle(f)
-        
+
     test_periods = list(filter(lambda p: p['history'][-1]['image_name'].startswith('2014'), periods))
 
     target = []

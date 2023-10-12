@@ -4,9 +4,6 @@ import lightning.pytorch as pl
 import timm
 import torch
 import torchmetrics
-# from mmaction.models.backbones import MViT, UniFormerV2
-# from movinets import MoViNet
-# from movinets.config import _C
 from torch.optim import Optimizer
 from torchvision.models.video import R3D_18_Weights, Swin3D_T_Weights, Swin3D_S_Weights, Swin3D_B_Weights, MC3_18_Weights, R2Plus1D_18_Weights
 from transformers import TimesformerConfig, TimesformerModel, VideoMAEConfig, VideoMAEModel, VivitConfig, VivitModel
@@ -69,20 +66,22 @@ class Forecaster(pl.LightningModule):
             self.network = TimesformerModel.from_pretrained("facebook/timesformer-base-finetuned-k400", config=config, ignore_mismatched_sizes=True)
             self.num_features = config.hidden_size
         elif model_name == 'videomae':
-            config =  VideoMAEConfig()
+            config = VideoMAEConfig()
             config.num_channels = self._input_channels
             config.image_size = self._image_size[0]
             config.num_frames = self._history_size
             self.network = VideoMAEModel.from_pretrained("MCG-NJU/videomae-base-finetuned-kinetics", config=config, ignore_mismatched_sizes=True)
             self.num_features = config.hidden_size
         elif model_name == 'vivit':
-            config =  VivitConfig()
+            config = VivitConfig()
             config.num_channels = self._input_channels
             config.image_size = self._image_size[0]
             config.num_frames = self._history_size
             self.network = VivitModel.from_pretrained("google/vivit-b-16x2-kinetics400", config=config, ignore_mismatched_sizes=True)
             self.num_features = config.hidden_size
         elif model_name == 'mvit':
+            from mmaction.models.backbones import MViT
+
             self.network = MViT(
                 spatial_size=self._image_size[0],
                 temporal_size=self._history_size,
@@ -92,6 +91,8 @@ class Forecaster(pl.LightningModule):
             )
             self.num_features = self.network.norm3.normalized_shape[0]
         elif model_name == 'uniformerv2':
+            from mmaction.models.backbones import UniFormerV2
+
             self.network = UniFormerV2(
                 input_resolution=self._image_size[0],
                 t_size=self._history_size,
@@ -100,6 +101,9 @@ class Forecaster(pl.LightningModule):
             self.network.conv1 = torch.nn.Conv3d(in_channels=4, out_channels=768, kernel_size=(1, 16, 16), stride=(1, 16, 16), bias=False)
             self.num_features = self.network.transformer.norm.normalized_shape[0]
         elif model_name == 'movinet':
+            from movinets import MoViNet
+            from movinets.config import _C
+
             config = _C.MODEL.MoViNetA4
             self.network = MoViNet(config, causal=False, pretrained=True)
             self.network.conv1.conv_1.conv3d = torch.nn.Conv3d(
