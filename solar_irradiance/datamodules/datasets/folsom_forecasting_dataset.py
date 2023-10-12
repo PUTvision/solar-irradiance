@@ -2,6 +2,8 @@ from pathlib import Path
 from typing import Tuple, List, Dict, Any, Union
 
 import numpy as np
+import pandas as pd
+import pytz
 import torch
 from PIL import Image
 from albumentations import ReplayCompose
@@ -19,6 +21,9 @@ class FolsomForecastingDataset(Dataset):
     longitude = -121.148
     camera_orientation_compensation = 165
     focal_length = 0.48
+
+    us_pacific = pytz.timezone('US/Pacific')
+    utc = pytz.utc
 
     def __init__(
             self,
@@ -65,7 +70,11 @@ class FolsomForecastingDataset(Dataset):
             torch_image = torch.from_numpy(image).permute(2, 0, 1)
 
             if self._add_sun_mask:
-                sun_mask = self._sun_mask(image_shape=image.shape, timestamp=image_path.name[:15])
+                date = pd.to_datetime(image_path.name[:15], format='%Y%m%d_%H%M%S')
+                us_pacific_date = self.us_pacific.localize(date)
+                utc_date = us_pacific_date.astimezone(self.utc).strftime('%Y%m%d_%H%M%S')
+
+                sun_mask = self._sun_mask(image_shape=image.shape, timestamp=utc_date)
                 torch_image = torch.cat([torch_image, torch.from_numpy(sun_mask).permute(2, 0, 1)], dim=0)
 
             if self._add_irradiance_channel:

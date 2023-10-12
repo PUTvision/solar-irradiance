@@ -14,6 +14,7 @@ import pvlib
 
 
 class SunMask:
+    """Creates sun mask based on camera location and orientation."""
     def __init__(
             self,
             latitude: float,
@@ -27,6 +28,19 @@ class SunMask:
         self._focal_length = focal_length
 
     def __call__(self, image_shape: np.ndarray, timestamp: str) -> np.ndarray:
+        """_summary_
+
+        Parameters
+        ----------
+        image_shape
+            Shape of the image.
+        timestamp
+            Image timestamp in UTC format.
+
+        Returns
+        -------
+            Sun mask with the same shape as provided with image_shape param and with 1 channel.
+        """
         x, y = self._calculate_sun_center_in_image(timestamp, image_shape[:2])
 
         mask_shape = (image_shape[0], image_shape[1], 1)
@@ -38,7 +52,19 @@ class SunMask:
         return mask
 
     def _calculate_sun_center_in_image(self, timestamp: str, image_shape: Tuple[int, int]) -> Tuple[int]:
+        """Calculates coordinates of sun center in image for provided timestamp.
 
+        Parameters
+        ----------
+        timestamp
+            Image timestamp in UTC format.
+        image_shape
+            Shape of the image.
+
+        Returns
+        -------
+            Sun center coordinates in image.
+        """
         solarposition = pvlib.solarposition.get_solarposition(
             time=pd.to_datetime(timestamp, format='%Y%m%d_%H%M%S'),
             latitude=self._latitude,
