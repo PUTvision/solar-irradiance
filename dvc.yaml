@@ -49,3 +49,9 @@ stages:
       - src/solar_irradiance/models/forecaster.py
     params:
       - train_forecaster
+
+  persistent_model:
+    cmd: python scripts/persistent_model.py
+         --periods_path ${export_periods.output_path}
+    deps:
+      - ${data_root}
