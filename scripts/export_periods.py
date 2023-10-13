@@ -11,7 +11,7 @@ from tqdm import tqdm
 @click.option('--output-path', type=click.Path(path_type=Path), required=True)
 @click.option('--history-size', type=int, default=4)
 @click.option('--time-window', type=int, default=15)
-def export_folsom(cleaned_dataframe_path: Path, history_size: int, time_window: int, output_path: Path):
+def export_periods(cleaned_dataframe_path: Path, history_size: int, time_window: int, output_path: Path):
     history_size -= 1   # history samples without sample from t time
     period = time_window // history_size
 
@@ -47,4 +47,4 @@ def export_folsom(cleaned_dataframe_path: Path, history_size: int, time_window: 
 
 
 if __name__ == '__main__':
-    export_folsom()
+    export_periods()

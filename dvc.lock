@@ -1,7 +1,7 @@
 schema: '2.0'
 stages:
   clean_dataframe:
-    cmd: python scripts/prepare_dataframe.py --data-root data/Folsom --output-path
+    cmd: python scripts/clean_dataframe.py --data-root data/Folsom --output-path
       data/Prepared/cleaned_irradiance.csv
     deps:
     - path: data/Folsom
@@ -9,7 +9,7 @@ stages:
       md5: d08c4a7979ef3b4011d8fe0e0378c28b.dir
       size: 63948611919
       nfiles: 773979
-    - path: scripts/prepare_dataframe.py
+    - path: scripts/clean_dataframe.py
       hash: md5
       md5: 7cfaf84d107b886212a9ff2a13751910
       size: 1457
@@ -19,14 +19,14 @@ stages:
       md5: eec0d1858ab9653af0bb8082240c67fd
       size: 45193201
   export_periods:
-    cmd: python scripts/export_folsom.py --cleaned-dataframe-path data/Prepared/cleaned_irradiance.csv
+    cmd: python scripts/export_periods.py --cleaned-dataframe-path data/Prepared/cleaned_irradiance.csv
       --time-window 15 --history-size 4 --output-path data/Prepared/periods.pickle
     deps:
     - path: data/Prepared/cleaned_irradiance.csv
       hash: md5
       md5: eec0d1858ab9653af0bb8082240c67fd
       size: 45193201
-    - path: scripts/export_folsom.py
+    - path: scripts/export_periods.py
       hash: md5
       md5: 779b3c0ba7e8e794a017a2c91044e775
       size: 1807

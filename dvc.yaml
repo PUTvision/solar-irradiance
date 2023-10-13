@@ -7,8 +7,8 @@ stages:
          --data-root ${data_root}
          --output-path ${clean_dataframe.output_path}
     deps:
-      - ${clean_dataframe.script_path}
       - ${data_root}
+      - ${clean_dataframe.script_path}
     outs:
       - ${clean_dataframe.output_path}
 

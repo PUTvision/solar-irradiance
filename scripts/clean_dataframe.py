@@ -10,7 +10,7 @@ from tqdm import tqdm
 @click.command()
 @click.option('--data-root', type=click.Path(exists=True, path_type=Path), required=True)
 @click.option('--output-path', type=click.Path(path_type=Path), required=True)
-def prepare_dataframe(data_root: Path, output_path: Path):
+def clean_dataframe(data_root: Path, output_path: Path):
     df = pd.read_csv(
         data_root / 'irradiance.csv',
         parse_dates={'datetime': ['date']},
@@ -41,4 +41,4 @@ def prepare_dataframe(data_root: Path, output_path: Path):
 
 
 if __name__ == '__main__':
-    prepare_dataframe()
+    clean_dataframe()

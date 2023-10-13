@@ -1,9 +1,9 @@
 clean_dataframe:
-  script_path: scripts/prepare_dataframe.py
+  script_path: scripts/clean_dataframe.py
   output_path: data/Prepared/cleaned_irradiance.csv
 
 export_periods:
-  script_path: scripts/export_folsom.py
+  script_path: scripts/export_periods.py
   time_window: 15
   history_size: 4
   output_path: data/Prepared/periods.pickle
