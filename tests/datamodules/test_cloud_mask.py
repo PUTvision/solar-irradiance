@@ -36,9 +36,9 @@ def test_class_call(image_shape, method):
 
 
 @pytest.mark.parametrize("image, true_mask", [
-    (np.ones((768, 768, 3), dtype=np.uint8)*[255, 0, 0], np.zeros((768, 768, 1), dtype=np.float32)),
-    (np.ones((384, 384, 3), dtype=np.uint8)*[0, 0, 255], np.zeros((384, 384, 1), dtype=np.float32)),
-    (np.ones((192, 192, 3), dtype=np.uint8)*[0, 0, 0], np.zeros((192, 192, 1), dtype=np.float32)),
+    (np.ones((768, 768, 3), dtype=np.uint8) * [255, 0, 0], np.zeros((768, 768, 1), dtype=np.float32)),
+    (np.ones((384, 384, 3), dtype=np.uint8) * [0, 0, 255], np.zeros((384, 384, 1), dtype=np.float32)),
+    (np.ones((192, 192, 3), dtype=np.uint8) * [0, 0, 0], np.zeros((192, 192, 1), dtype=np.float32)),
 ])
 def test_blue_red_ratio(image, true_mask):
     cloud_mask_gen = CloudMask(shape=image.shape[:2], method="blue_red_ratio")
@@ -50,8 +50,8 @@ def test_blue_red_ratio(image, true_mask):
 
 
 @pytest.mark.parametrize("image, true_mask", [
-    (np.zeros((768, 768, 3), dtype=np.uint8)*255, np.zeros((768, 768, 1), dtype=np.float32)),
-    (np.zeros((384, 384, 3), dtype=np.uint8), np.zeros((384, 384, 1), dtype=np.float32)/255),
+    (np.zeros((768, 768, 3), dtype=np.uint8) * 255, np.zeros((768, 768, 1), dtype=np.float32)),
+    (np.zeros((384, 384, 3), dtype=np.uint8), np.zeros((384, 384, 1), dtype=np.float32) / 255),
 ])
 def test_blue_red_difference(image, true_mask):
     cloud_mask_gen = CloudMask(shape=image.shape[:2], method="blue_red_difference")
@@ -63,9 +63,9 @@ def test_blue_red_difference(image, true_mask):
 
 
 @pytest.mark.parametrize("image, true_mask", [
-    (np.ones((768, 768, 3), dtype=np.uint8)*[255, 0, 0], np.zeros((768, 768, 1), dtype=np.float32)),
-    (np.ones((384, 384, 3), dtype=np.uint8)*[0, 0, 255], np.zeros((384, 384, 1), dtype=np.float32)),
-    (np.ones((192, 192, 3), dtype=np.uint8)*[0, 0, 0], np.zeros((192, 192, 1), dtype=np.float32)),
+    (np.ones((768, 768, 3), dtype=np.uint8) * [255, 0, 0], np.zeros((768, 768, 1), dtype=np.float32)),
+    (np.ones((384, 384, 3), dtype=np.uint8) * [0, 0, 255], np.zeros((384, 384, 1), dtype=np.float32)),
+    (np.ones((192, 192, 3), dtype=np.uint8) * [0, 0, 0], np.zeros((192, 192, 1), dtype=np.float32)),
 ])
 def test_normalized_blue_red_ratio(image, true_mask):
     cloud_mask_gen = CloudMask(shape=image.shape[:2], method="normalized_blue_red_ratio")

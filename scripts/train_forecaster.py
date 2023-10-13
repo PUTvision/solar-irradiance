@@ -133,10 +133,10 @@ def train_forecaster(data_root: Path, periods_path: Path):
 
         torch.onnx.export(
             model,
-            (image_input, irradiance_history,), # model input (or a tuple for multiple inputs)
-            f'{cfg.model.model_name}.onnx',     # where to save the model (can be a file or file-like object)
-            export_params=True,                 # store the trained parameter weights inside the model file
-            opset_version=opset,                # the ONNX version to export the model to
+            (image_input, irradiance_history,),     # model input (or a tuple for multiple inputs)
+            f'{cfg.model.model_name}.onnx',         # where to save the model (can be a file or file-like object)
+            export_params=True,                     # store the trained parameter weights inside the model file
+            opset_version=opset,                    # the ONNX version to export the model to
             input_names=['image_input', 'irradiance_history'],
             output_names=['output'],
             do_constant_folding=False

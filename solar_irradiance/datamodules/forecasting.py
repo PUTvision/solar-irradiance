@@ -69,7 +69,7 @@ class ForecastingDataModule(LightningDataModule):
         test_periods = list(filter(lambda p: p['history'][-1]['image_name'].startswith('2014'), periods))
         train_val_periods = list(filter(lambda p: not p['history'][-1]['image_name'].startswith('2014'), periods))
 
-        size = 170 # number of days for validatation dataset to get 80-20 ratio of train-val datasets
+        size = 170  # number of days for validatation dataset to get 80-20 ratio of train-val datasets
         np.random.seed(self._seed)
         val_dates = [str(y) + str(m).zfill(2) + str(d).zfill(2) for y, m, d in zip(
             np.random.randint(2015, 2017, size=size),
@@ -90,7 +90,7 @@ class ForecastingDataModule(LightningDataModule):
             add_sun_mask=self._add_sun_mask,
             add_irradiance_channel=self._add_irradiance_channel,
             optical_flow=self._optical_flow,
-            cloud_mask_method = self._cloud_mask_method,
+            cloud_mask_method=self._cloud_mask_method,
             image_size=self._image_size,
         )
         self._val_dataset = FolsomForecastingDataset(
@@ -100,7 +100,7 @@ class ForecastingDataModule(LightningDataModule):
             add_sun_mask=self._add_sun_mask,
             add_irradiance_channel=self._add_irradiance_channel,
             optical_flow=self._optical_flow,
-            cloud_mask_method = self._cloud_mask_method,
+            cloud_mask_method=self._cloud_mask_method,
             image_size=self._image_size,
         )
         self._test_dataset = FolsomForecastingDataset(
@@ -110,7 +110,7 @@ class ForecastingDataModule(LightningDataModule):
             add_sun_mask=self._add_sun_mask,
             add_irradiance_channel=self._add_irradiance_channel,
             optical_flow=self._optical_flow,
-            cloud_mask_method = self._cloud_mask_method,
+            cloud_mask_method=self._cloud_mask_method,
             image_size=self._image_size,
         )
 

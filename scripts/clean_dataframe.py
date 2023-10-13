@@ -3,14 +3,14 @@ from pathlib import Path
 import click
 import numpy as np
 import pandas as pd
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 from tqdm import tqdm
 
 
 @click.command()
 @click.option('--data-root', type=click.Path(exists=True, path_type=Path), required=True)
 @click.option('--output-path', type=click.Path(path_type=Path), required=True)
-def prepare_dataframe(data_root: Path, output_path: Path):
+def clean_dataframe(data_root: Path, output_path: Path):
     df = pd.read_csv(
         data_root / 'irradiance.csv',
         parse_dates={'datetime': ['date']},
@@ -27,7 +27,7 @@ def prepare_dataframe(data_root: Path, output_path: Path):
         image_path = Path(data_root, 'images', image_name.strftime('%Y%m%d_%H%M%S') + '.jpg')
         try:
             _ = np.asarray(Image.open(image_path))
-        except:
+        except UnidentifiedImageError:
             print(f'Truncated image: {image_path}')
             continue
 
@@ -41,4 +41,4 @@ def prepare_dataframe(data_root: Path, output_path: Path):
 
 
 if __name__ == '__main__':
-    prepare_dataframe()
+    clean_dataframe()

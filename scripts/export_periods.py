@@ -11,8 +11,8 @@ from tqdm import tqdm
 @click.option('--output-path', type=click.Path(path_type=Path), required=True)
 @click.option('--history-size', type=int, default=4)
 @click.option('--time-window', type=int, default=15)
-def export_folsom(cleaned_dataframe_path: Path, history_size: int, time_window: int, output_path: Path):
-    history_size -= 1 # history samples without sample from t time
+def export_periods(cleaned_dataframe_path: Path, history_size: int, time_window: int, output_path: Path):
+    history_size -= 1   # history samples without sample from t time
     period = time_window // history_size
 
     periods = []
@@ -27,7 +27,7 @@ def export_folsom(cleaned_dataframe_path: Path, history_size: int, time_window: 
 
     for t, _ in tqdm(df.iterrows(), total=len(df)):
         t = pd.Timestamp(t)
-        t_history = [t - pd.Timedelta(minutes=period*i) for i in range(history_size, 0, -1)]
+        t_history = [t - pd.Timedelta(minutes=period * i) for i in range(history_size, 0, -1)]
         t_target = t + pd.Timedelta(minutes=time_window)
 
         if all(map(lambda x: x in df.index, [*t_history, t_target])):
@@ -47,4 +47,4 @@ def export_folsom(cleaned_dataframe_path: Path, history_size: int, time_window: 
 
 
 if __name__ == '__main__':
-    export_folsom()
+    export_periods()

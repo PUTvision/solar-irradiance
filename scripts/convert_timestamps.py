@@ -1,5 +1,4 @@
 from pathlib import Path
-
 import click
 import pandas as pd
 import pytz
@@ -7,8 +6,8 @@ from tqdm import tqdm
 
 
 @click.command()
-@click.argument('data-root', type=click.Path(exists=True, path_type=Path))
-def prepare_images(data_root: Path):
+@click.option('--data-root', type=click.Path(exists=True, path_type=Path), required=True)
+def convert_timestamps(data_root: Path):
     output_dir = data_root / 'images'
     output_dir.mkdir(exist_ok=True)
 
@@ -26,4 +25,4 @@ def prepare_images(data_root: Path):
 
 
 if __name__ == '__main__':
-    prepare_images()
+    convert_timestamps()

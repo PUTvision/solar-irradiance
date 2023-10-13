@@ -33,7 +33,7 @@ OPTICAL_FLOWS = {
     "deep_flow": cv2.optflow.createOptFlow_DeepFlow(),
     "pca_flow": cv2.optflow.createOptFlow_PCAFlow(),
     "dual_tvl1": cv2.optflow.createOptFlow_DualTVL1(),
-    "dense_rlof": cv2.optflow.createOptFlow_DenseRLOF(), # requires RGB input
+    "dense_rlof": cv2.optflow.createOptFlow_DenseRLOF(),    # requires RGB input
 }
 
 PROVIDERS = {
@@ -73,7 +73,7 @@ def preprocess(img_data: np.ndarray) -> np.ndarray:
 @click.option("--optical_flow", help="Add optical flow to input data", type=click.Choice(["dis", "farneback", "deep_flow", "pca_flow", "dual_tvl1", "dense_rlof"]), default=None)
 @click.option("--eval_periods_path", help="Data frame with evaluation periods", type=click.Path(exists=True, file_okay=True), default="data/Eval/eval_periods.pickle")
 @click.option("--dataset_path", help="Path to dataset image directory", type=click.Path(exists=True, dir_okay=True), default="data/Eval/images")
-def main(model_path, dims, provider, add_sun_mask, add_irradiance_channel, cloud_mask_method, optical_flow, eval_periods_path, dataset_path):
+def evaluate(model_path, dims, provider, add_sun_mask, add_irradiance_channel, cloud_mask_method, optical_flow, eval_periods_path, dataset_path):
     of = OPTICAL_FLOWS.get(optical_flow)
     input_shape = (384, 384)
 
@@ -92,14 +92,14 @@ def main(model_path, dims, provider, add_sun_mask, add_irradiance_channel, cloud
     log.info(f"ONNXRuntime provider: {inference_provider}")
     sess = ort.InferenceSession(model_path, providers=[inference_provider])
 
-    inputs = [l.name for l in sess.get_inputs()]
-    shapes = [l.shape for l in sess.get_inputs()]
+    inputs = [i.name for i in sess.get_inputs()]
+    shapes = [s.shape for s in sess.get_inputs()]
     log.info(f"Model inputs: {inputs}")
     log.info(f"Model inputs' shapes: {shapes}")
 
     # NN model warmup
     for _ in range(10):
-        _ = sess.run(None, {inputs[idx]: np.random.normal(size=shapes[idx]).astype(np.float32) for idx in range(len(inputs))})[0]
+        _ = sess.run(None, {inputs[idx]: np.random.normal(size=shapes[idx]).astype(np.float32) for idx in range(len(inputs))})
 
     target_irradiances = []
     outputs = []
@@ -138,7 +138,10 @@ def main(model_path, dims, provider, add_sun_mask, add_irradiance_channel, cloud
                 if add_sun_mask:
                     input_data[-1] *= irradiance
                 else:
-                    input_data = np.concatenate([input_data, np.ones((1, *input_shape), dtype=np.float32) * irradiance], axis=0)
+                    input_data = np.concatenate(
+                        [input_data, np.ones((1, *input_shape), dtype=np.float32) * irradiance],
+                        axis=0,
+                    )
                 irr_channel_time += time.time() - irr_channel_start
 
             if cloud_mask_method is not None:
@@ -191,4 +194,4 @@ def main(model_path, dims, provider, add_sun_mask, add_irradiance_channel, cloud
 
 
 if __name__ == "__main__":
-    main()
+    evaluate()
