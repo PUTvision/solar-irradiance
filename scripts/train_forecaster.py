@@ -22,8 +22,7 @@ log = utils.get_logger(__name__)
 
 @click.command()
 @click.option('--data-root', type=click.Path(exists=True, path_type=Path), required=True)
-@click.option('--periods-path', type=click.Path(exists=True, path_type=Path), required=True)
-def train_forecaster(data_root: Path, periods_path: Path):
+def train_forecaster(data_root: Path):
     data_cfg = OmegaConf.create(dvc.api.params_show()['export_periods'])
     cfg = OmegaConf.create(dvc.api.params_show()['train_forecaster'])
 
@@ -31,7 +30,7 @@ def train_forecaster(data_root: Path, periods_path: Path):
 
     datamodule = ForecastingDataModule(
         root_data_path=data_root,
-        periods_path=periods_path,
+        periods_path=data_root / 'periods.pickle',
         augment=cfg.datamodule.augment,
         train_val_set_size=cfg.datamodule.train_val_set_size,
         image_size=cfg.datamodule.image_size,
