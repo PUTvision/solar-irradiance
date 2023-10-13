@@ -31,15 +31,16 @@ def export_periods(cleaned_dataframe_path: Path, history_size: int, time_window:
         t_target = t + pd.Timedelta(minutes=time_window)
 
         if all(map(lambda x: x in df.index, [*t_history, t_target])):
-            periods.append({
-                'history': [
-                    {
-                        'image_name': df.loc[_t]['image_name'],
-                        'irradiance': df.loc[_t]['ghi']
-                    } for _t in sorted([*t_history, t])
-                ],
-                'target_irradiance': df.loc[t_target]['ghi'],
-            })
+            if df.loc[t_target]['ghi'] > 0.0:
+                periods.append({
+                    'history': [
+                        {
+                            'image_name': df.loc[_t]['image_name'],
+                            'irradiance': df.loc[_t]['ghi']
+                        } for _t in sorted([*t_history, t])
+                    ],
+                    'target_irradiance': df.loc[t_target]['ghi'],
+                })
 
     print(f'Number of periods: {len(periods)}')
     with output_path.open('wb') as f:
