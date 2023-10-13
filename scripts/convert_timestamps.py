@@ -14,9 +14,7 @@ def convert_timestamps(data_root: Path):
     us_pacific = pytz.timezone('US/Pacific')
     utc = pytz.utc
 
-    image_list = sorted(data_root.rglob('*.jpg'))
-
-    for image_path in tqdm(image_list):
+    for image_path in tqdm(sorted(data_root.rglob('*.jpg'))):
         filename = image_path.name
         date = pd.to_datetime(filename.replace('.jpg', ''), format='%Y%m%d_%H%M%S').round('1min')
         utc_date = utc.localize(date)
@@ -24,8 +22,6 @@ def convert_timestamps(data_root: Path):
         filename = us_pacific_date.strftime('%Y%m%d_%H%M%S') + '.jpg'
 
         image_path.rename(output_dir / filename)
-
-    print(f'Images: {len(image_list)}')
 
 
 if __name__ == '__main__':
