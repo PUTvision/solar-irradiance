@@ -3,31 +3,32 @@ from pathlib import Path
 import click
 import numpy as np
 import pandas as pd
-from PIL import Image, UnidentifiedImageError
+from PIL import Image
 from tqdm import tqdm
 
 
 @click.command()
-@click.option('--data-root', type=click.Path(exists=True, path_type=Path), required=True)
+@click.option('--data-raw', type=click.Path(exists=True, path_type=Path), required=True)
+@click.option('--images-path', type=click.Path(exists=True, path_type=Path), required=True)
 @click.option('--output-path', type=click.Path(path_type=Path), required=True)
-def clean_dataframe(data_root: Path, output_path: Path):
+def clean_dataframe(data_raw: Path, images_path: Path, output_path: Path):
     df = pd.read_csv(
-        data_root / 'irradiance.csv',
-        parse_dates={'datetime': ['date']},
+        data_raw / 'Folsom_irradiance.csv',
+        parse_dates={'datetime': ['timeStamp']},
         index_col='datetime',
-        date_format='%Y%m%d_%H%M%S',
+        date_format='%Y-%m-%d %H:%M:%S',
     ).tz_localize('UTC').tz_convert('US/Pacific')
     existing_images = {
-        pd.to_datetime(image_path.stem, format='%Y%m%d_%H%M%S').tz_localize('US/Pacific') for image_path in data_root.rglob('*.jpg')
+        pd.to_datetime(image_path.stem, format='%Y%m%d_%H%M%S').tz_localize('US/Pacific') for image_path in images_path.rglob('*.jpg')
     }
     print(f'Existing images: {len(existing_images)}')
 
     filtered_images = set()
     for image_name in tqdm(existing_images):
-        image_path = Path(data_root, 'images', image_name.strftime('%Y%m%d_%H%M%S') + '.jpg')
+        image_path = Path(images_path, image_name.strftime('%Y%m%d_%H%M%S') + '.jpg')
         try:
             _ = np.asarray(Image.open(image_path))
-        except UnidentifiedImageError:
+        except OSError:
             print(f'Truncated image: {image_path}')
             continue
 

@@ -1,13 +1,34 @@
 vars:
-  - data_root: data/Folsom
+  - data_raw: data/Raw
+  - data_prepared: data/Prepared
+  - data_eval: data/Eval
 
 stages:
+  get_data:
+    cmd: bash scripts/get_data.sh
+    outs:
+      - data/Raw/Folsom_irradiance.csv
+      - data/Raw/images/:
+          cache: false
+
+  convert_timestamps:
+    cmd: python ${convert_timestamps.script_path}
+         --data-raw ${data_raw}
+         --output-path ${convert_timestamps.output_path}
+    deps:
+      - ${data_raw}/images/
+      - ${convert_timestamps.script_path}
+    outs:
+      - ${convert_timestamps.output_path}
+
   clean_dataframe:
     cmd: python ${clean_dataframe.script_path}
-         --data-root ${data_root}
+         --data-raw ${data_raw}
+         --images-path ${convert_timestamps.output_path}
          --output-path ${clean_dataframe.output_path}
     deps:
-      - ${data_root}
+      - ${data_raw}/Folsom_irradiance.csv
+      - ${convert_timestamps.output_path}
       - ${clean_dataframe.script_path}
     outs:
       - ${clean_dataframe.output_path}
@@ -29,29 +50,22 @@ stages:
 
   export_eval_periods:
     cmd: python ${export_eval_periods.script_path}
-         --periods_path ${export_periods.output_path}
-         --data_root ${data_root}
-         --output_path ${export_eval_periods.output_path}
+         --data-prepared-path ${data_prepared}
+         --output-path ${export_eval_periods.output_path}
     deps:
-      - ${data_root}
+      - ${data_prepared}/images/
       - ${export_periods.output_path}
+      - ${export_eval_periods.script_path}
     outs:
       - ${export_eval_periods.output_path}
 
   train_forecaster:
     cmd: python ${train_forecaster.script_path}
-         --data-root ${data_root}
-         --periods-path ${export_periods.output_path}
+         --data-root ${data_prepared}
     deps:
       - ${train_forecaster.script_path}
-      - ${data_root}
+      - ${data_prepared}
       - ${export_periods.output_path}
       - src/solar_irradiance/models/forecaster.py
     params:
       - train_forecaster
-
-  persistent_model:
-    cmd: python scripts/persistent_model.py
-         --periods_path ${export_periods.output_path}
-    deps:
-      - ${data_root}

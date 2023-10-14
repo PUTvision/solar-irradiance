@@ -30,53 +30,18 @@
 
 </div>
 
-The data is stored in the `data` directory. The `data` directory is structured as shown below. Note that the `irradiance.csv` file is only present in the `Folsom` and `SIRTA` datasets and contains the irradiance values for each image. Whereas the `HYTA` and `SWINySEG` datasets contain the masks for each image in the `masks` directory. The `skip_images.txt` file contains the names of the images that should be skipped during training and evaluation due to the lack of ground-truth irradiance, mask or file corruption.
+The data is stored in the [data](./data) directory. Preprocess steps are tracked by DVC and described in [dvc.yaml](./dvc.yaml)
 
-```console
-                             +-----------------+
-                             | data/Folsom.dvc |*
-                       ******+-----------------+ ******
-                 ******               *                ******
-          *******                     *                      ******
-    ******                            *                            ******
-****                         +-----------------+                         ****
-*                            | clean_dataframe |                            *
-*                            +-----------------+                            *
-*                                     *                                     *
-*                                     *                                     *
-*                                     *                                     *
-**                           +----------------+                            **
-  ***                        | export_periods |                         ***
-     ***                     +----------------+                      ***
-        ***                ****                ****               ***
-           ***          ***                        ***         ***
-              **      **                              **     **
-        +------------------+                  +---------------------+
-        | train_forecaster |                  | export_eval_periods |
-        +------------------+                  +---------------------+
-```
+### Data Structure
 
-## Project Structure
-
-```console
-├── config
-├── data
-├── outputs
-├── solar_irradiance
-|   ├── datamodules
-│   │   └── datasets
-│   ├── losses
-│   ├── models
-│   │   └── architectures
-│   └── utils
-└── tests
-    └── unit
-```
+- **Raw** - irradiance CSV and sky images extracted directly from files downloaded from [Folsom](https://zenodo.org/record/2826939) dataset
+- **Prepared** - processed data (filtered, timestamp moved to local timezone, grouped in periods)
+- **Eval** - small subset extracted for evaluation purposes
 
 ## Usage
 
 * train
 
 ```shell
-python scripts/train_forecaster.py --data-root data/Folsom --periods-path data/Prepared/periods.pickle
+python scripts/train_forecaster.py --data-root data/Prepared
 ```

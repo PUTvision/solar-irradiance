@@ -1,3 +1,7 @@
+convert_timestamps:
+  script_path: scripts/convert_timestamps.py
+  output_path: data/Prepared/images
+
 clean_dataframe:
   script_path: scripts/clean_dataframe.py
   output_path: data/Prepared/cleaned_irradiance.csv
