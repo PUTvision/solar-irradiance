@@ -4,12 +4,19 @@ vars:
   - data_eval: data/Eval
 
 stages:
+  get_data:
+    cmd: bash scripts/get_data.sh
+    outs:
+      - data/Raw/Folsom_irradiance.csv
+      - data/Raw/images/:
+          cache: false
+
   convert_timestamps:
     cmd: python ${convert_timestamps.script_path}
          --data-raw ${data_raw}
          --output-path ${convert_timestamps.output_path}
     deps:
-      - ${data_raw}
+      - ${data_raw}/images/
       - ${convert_timestamps.script_path}
     outs:
       - ${convert_timestamps.output_path}
@@ -20,7 +27,7 @@ stages:
          --images-path ${convert_timestamps.output_path}
          --output-path ${clean_dataframe.output_path}
     deps:
-      - ${data_raw}
+      - ${data_raw}/Folsom_irradiance.csv
       - ${convert_timestamps.output_path}
       - ${clean_dataframe.script_path}
     outs:
