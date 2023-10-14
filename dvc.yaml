@@ -51,9 +51,9 @@ stages:
   export_eval_periods:
     cmd: python ${export_eval_periods.script_path}
          --data-prepared-path ${data_prepared}
-         --output_path ${export_eval_periods.output_path}
+         --output-path ${export_eval_periods.output_path}
     deps:
-      - ${data_prepared}
+      - ${data_prepared}/images/
       - ${export_periods.output_path}
       - ${export_eval_periods.script_path}
     outs:
