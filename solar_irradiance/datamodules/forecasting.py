@@ -46,7 +46,7 @@ class ForecastingDataModule(LightningDataModule):
         self._seed = seed
 
         self._transforms = A.ReplayCompose([
-            A.CenterCrop(image_size[1], image_size[0]),
+            A.Resize(image_size[1], image_size[0]),
             A.Normalize(mean=image_mean, std=image_std),
         ])
         self._augmentations = A.ReplayCompose([
@@ -54,7 +54,7 @@ class ForecastingDataModule(LightningDataModule):
             A.Affine(rotate=(-10, 10), translate_px=(-10, 10), scale=(0.9, 1.1)),
             A.Flip(),
             # transforms
-            A.RandomCrop(image_size[1], image_size[0]),
+            A.Resize(image_size[1], image_size[0]),
             A.Normalize(mean=image_mean, std=image_std),
         ])
 
