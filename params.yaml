@@ -35,15 +35,15 @@ train_forecaster:
   trainer:
     devices: 1
     precision: bf16-mixed
-    max_epochs: 100
+    max_epochs: 20
 
   #### MODEL ####
   model:
     model_name: timm-resnet50
-    compile: True
-    loss_function: MAE
+    compile: False
+    loss_function: BerHu
     lr: 3e-4
-    lr_patience: 5
+    lr_patience: 3
 
   #### CALLBACKS ####
   callbacks:
@@ -59,19 +59,19 @@ train_forecaster:
     early_stopping:
       monitor: "val_loss" # name of the logged metric which determines when model is improving
       mode: "min" # can be "max" or "min"
-      patience: 10 # how many validation epochs of not improving until training stops
+      patience: 5 # how many validation epochs of not improving until training stops
       min_delta: 0 # minimum change in the monitored metric needed to qualify as an improvement
 
   #### DATA ####
   datamodule:
     augment: False
-    train_val_set_size: 0.1 # size of the train and validation sets for experiments in relation to overall size; 0-1 range
-    image_size: [ 384, 384 ]
+    train_val_set_size: 1.0 # size of the train and validation sets for experiments in relation to overall size; 0-1 range
+    image_size: [ 128, 128 ]
     image_mean: [ 0.43216, 0.394666, 0.3764 ]
     image_std: [ 0.22803, 0.22145, 0.21698 ]
-    batch_size: 16
+    batch_size: 64
     workers: 32
-    add_sun_mask: False
-    add_irradiance_channel: False
+    add_sun_mask: True
+    add_irradiance_channel: True
     cloud_mask_method: null # available: null, blue_red_ratio, blue_red_difference, normalized_blue_red_ratio
     optical_flow: null # available: null, dis, farneback, deep_flow, pca_flow, dual_tvl1, dense_rlof

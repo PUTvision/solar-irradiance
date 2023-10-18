@@ -45,7 +45,7 @@ class SunMask:
 
         mask_shape = (image_shape[0], image_shape[1], 1)
         mask = np.zeros(mask_shape, np.uint8)
-        cv2.circle(mask, (x, y), 100, 255, -1)
+        cv2.circle(mask, (x, y), image_shape[0]//16, 255, -1)
 
         mask = (mask / 255).astype(np.float32)
 
