@@ -24,7 +24,7 @@ sun_mask_gen = SunMask(LATITUDE, LONGITUDE, CAMERA_ORIENTATION_COMPENSATION, FOC
 ])
 def test_class_call(timestamp, image_shape, x_true, y_true):
     true_mask = np.zeros((*image_shape, 1), np.uint8)
-    cv2.circle(true_mask, (x_true, y_true), 100, 255, -1)
+    cv2.circle(true_mask, (x_true, y_true), image_shape[0] // 16, 255, -1)
     true_mask = (true_mask / 255).astype(np.float32)
 
     sun_mask = sun_mask_gen(image_shape=image_shape, timestamp=timestamp)
