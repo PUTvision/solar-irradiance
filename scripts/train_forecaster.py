@@ -98,6 +98,7 @@ def train_forecaster(data_root: Path):
             static_graph=True,
         ),
         precision=cfg.trainer.precision,
+        min_epochs=cfg.trainer.min_epochs,
         max_epochs=cfg.trainer.max_epochs,
         benchmark=True,
         sync_batchnorm=cfg.trainer.devices > 0,

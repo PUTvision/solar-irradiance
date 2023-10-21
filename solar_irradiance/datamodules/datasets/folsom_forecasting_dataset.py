@@ -101,8 +101,8 @@ class FolsomForecastingDataset(Dataset):
 
         target_irradiance = period['target_irradiance'] / MAX_IRRADIANCE
 
-        # image_input = torch.stack(source_images).permute(1, 0, 2, 3)
-        image_input = source_images[-1]
+        image_input = torch.stack(source_images).permute(1, 0, 2, 3)
+        # image_input = source_images[-1]
 
         return (
             image_input,
