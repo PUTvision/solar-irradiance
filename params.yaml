@@ -35,11 +35,12 @@ train_forecaster:
   trainer:
     devices: 1
     precision: bf16-mixed
+    min_epochs: 10
     max_epochs: 20
 
   #### MODEL ####
   model:
-    model_name: timm-resnet50
+    model_name: r3d_18
     compile: False
     loss_function: BerHu
     lr: 3e-4

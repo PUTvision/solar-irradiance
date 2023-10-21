@@ -42,6 +42,7 @@ def train_forecaster(data_root: Path):
         add_irradiance_channel=cfg.datamodule.add_irradiance_channel,
         optical_flow=cfg.datamodule.optical_flow,
         cloud_mask_method=cfg.datamodule.cloud_mask_method,
+        model_2D=cfg.model.model_name.startswith('timm-'),
         seed=cfg.seed,
     )
 
@@ -98,6 +99,7 @@ def train_forecaster(data_root: Path):
             static_graph=True,
         ),
         precision=cfg.trainer.precision,
+        min_epochs=cfg.trainer.min_epochs,
         max_epochs=cfg.trainer.max_epochs,
         benchmark=True,
         sync_batchnorm=cfg.trainer.devices > 0,

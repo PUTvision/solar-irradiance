@@ -25,4 +25,5 @@ onnx==1.14.0
 onnxsim==0.4.33
 
 # ----- tests, linters ----- #
-pytest==7.4.0
+flake8==6.1.0
+pytest==7.4.2
