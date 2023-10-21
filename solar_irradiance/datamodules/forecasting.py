@@ -8,7 +8,7 @@ import torch.utils.data
 from lightning import LightningDataModule
 from sklearn.model_selection import train_test_split
 
-from solar_irradiance.datamodules.datasets.folsom_forecasting_dataset import FolsomForecastingDataset
+from solar_irradiance.datamodules.datasets import FolsomForecastingDataset2D, FolsomForecastingDataset3D
 
 
 class ForecastingDataModule(LightningDataModule):
@@ -27,6 +27,7 @@ class ForecastingDataModule(LightningDataModule):
             add_irradiance_channel: bool,
             optical_flow: Union[None, str],
             cloud_mask_method: Union[None, str],
+            model_2D: bool,
             seed: int,
     ):
         super().__init__()
@@ -44,6 +45,8 @@ class ForecastingDataModule(LightningDataModule):
         self._optical_flow = optical_flow
         self._cloud_mask_method = cloud_mask_method
         self._seed = seed
+
+        self._dataset = FolsomForecastingDataset2D if model_2D else FolsomForecastingDataset3D
 
         self._transforms = A.ReplayCompose([
             A.Resize(image_size[1], image_size[0]),
@@ -83,7 +86,7 @@ class ForecastingDataModule(LightningDataModule):
             val_periods, __ = train_test_split(val_periods, train_size=self._train_val_set_size, random_state=self._seed)
             train_periods, __ = train_test_split(train_periods, train_size=self._train_val_set_size, random_state=self._seed)
 
-        self._train_dataset = FolsomForecastingDataset(
+        self._train_dataset = self._dataset(
             data_root=self._data_root,
             periods=train_periods,
             transforms=self._augmentations if self._augment else self._transforms,
@@ -93,7 +96,7 @@ class ForecastingDataModule(LightningDataModule):
             cloud_mask_method=self._cloud_mask_method,
             image_size=self._image_size,
         )
-        self._val_dataset = FolsomForecastingDataset(
+        self._val_dataset = self._dataset(
             data_root=self._data_root,
             periods=val_periods,
             transforms=self._transforms,
@@ -103,7 +106,7 @@ class ForecastingDataModule(LightningDataModule):
             cloud_mask_method=self._cloud_mask_method,
             image_size=self._image_size,
         )
-        self._test_dataset = FolsomForecastingDataset(
+        self._test_dataset = self._dataset(
             data_root=self._data_root,
             periods=test_periods,
             transforms=self._transforms,

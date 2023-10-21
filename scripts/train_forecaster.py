@@ -42,6 +42,7 @@ def train_forecaster(data_root: Path):
         add_irradiance_channel=cfg.datamodule.add_irradiance_channel,
         optical_flow=cfg.datamodule.optical_flow,
         cloud_mask_method=cfg.datamodule.cloud_mask_method,
+        model_2D=cfg.model.model_name.startswith('timm-'),
         seed=cfg.seed,
     )
 

@@ -16,7 +16,7 @@ MAX_IRRADIANCE = 1466.0     # max irradiance in the dataset
 # MAX_IRRADIANCE = 1600.0     # max irradiance from Hukseflux pyranometer
 
 
-class FolsomForecastingDataset(Dataset):
+class FolsomForecastingDataset2D(Dataset):
     latitude = 38.642,
     longitude = -121.148
     camera_orientation_compensation = 165
@@ -101,8 +101,7 @@ class FolsomForecastingDataset(Dataset):
 
         target_irradiance = period['target_irradiance'] / MAX_IRRADIANCE
 
-        image_input = torch.stack(source_images).permute(1, 0, 2, 3)
-        # image_input = source_images[-1]
+        image_input = source_images[-1]
 
         return (
             image_input,
