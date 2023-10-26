@@ -63,21 +63,21 @@ class Forecaster(pl.LightningModule):
             config.num_channels = self._input_channels
             config.image_size = self._image_size[0]
             config.num_frames = self._history_size
-            self.network = TimesformerModel.from_pretrained("facebook/timesformer-base-finetuned-k400", config=config, ignore_mismatched_sizes=True)
+            self.network = TimesformerModel.from_pretrained("facebook/timesformer-base-finetuned-k400", config=config, ignore_mismatched_sizes=True, resume_download=True)
             self.num_features = config.hidden_size
         elif model_name == 'videomae':
             config = VideoMAEConfig()
             config.num_channels = self._input_channels
             config.image_size = self._image_size[0]
             config.num_frames = self._history_size
-            self.network = VideoMAEModel.from_pretrained("MCG-NJU/videomae-base-finetuned-kinetics", config=config, ignore_mismatched_sizes=True)
+            self.network = VideoMAEModel.from_pretrained("MCG-NJU/videomae-base-finetuned-kinetics", config=config, ignore_mismatched_sizes=True, resume_download=True)
             self.num_features = config.hidden_size
         elif model_name == 'vivit':
             config = VivitConfig()
             config.num_channels = self._input_channels
             config.image_size = self._image_size[0]
             config.num_frames = self._history_size
-            self.network = VivitModel.from_pretrained("google/vivit-b-16x2-kinetics400", config=config, ignore_mismatched_sizes=True)
+            self.network = VivitModel.from_pretrained("google/vivit-b-16x2-kinetics400", config=config, ignore_mismatched_sizes=True, resume_download=True)
             self.num_features = config.hidden_size
         elif model_name == 'mvit':
             from mmaction.models.backbones import MViT
@@ -157,8 +157,8 @@ class Forecaster(pl.LightningModule):
 
     def forward(self, x: torch.Tensor, irradiance_history: torch.Tensor) -> torch.Tensor:
         x = self.network(x)
-        # x = x[0][:, 0]
-        # x = x[0][1]
+        # x = x[0][:, 0]    # uncomment for models from transformers package
+        # x = x[0][1]       # uncomment for models from mmaction package
         x = self.network_head(torch.cat([x, irradiance_history], dim=1))
         return x
 
