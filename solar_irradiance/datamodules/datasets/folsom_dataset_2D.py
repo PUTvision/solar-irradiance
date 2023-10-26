@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Tuple, List, Dict, Any, Union
 
+import cv2
 import numpy as np
 import pandas as pd
 import pytz
@@ -14,6 +15,16 @@ from solar_irradiance.datamodules.cloud_mask import CloudMask
 
 MAX_IRRADIANCE = 1466.0     # max irradiance in the dataset
 # MAX_IRRADIANCE = 1600.0     # max irradiance from Hukseflux pyranometer
+
+
+OPTICAL_FLOWS = {
+    'dis': cv2.DISOpticalFlow_create(preset=cv2.DISOPTICAL_FLOW_PRESET_FAST),
+    # 'farneback': cv2.optflow.createOptFlow_Farneback(),
+    # 'deep_flow': cv2.optflow.createOptFlow_DeepFlow(),
+    # 'pca_flow': cv2.optflow.createOptFlow_PCAFlow(),
+    # 'dual_tvl1': cv2.optflow.createOptFlow_DualTVL1(),
+    # 'dense_rlof': cv2.optflow.createOptFlow_DenseRLOF(),    # requires RGB input
+}
 
 
 class FolsomForecastingDataset2D(Dataset):
@@ -42,6 +53,7 @@ class FolsomForecastingDataset2D(Dataset):
         self._add_sun_mask = add_sun_mask
         self._sun_mask = SunMask(self.latitude, self.longitude, self.camera_orientation_compensation, self.focal_length)
         self._add_irradiance_channel = add_irradiance_channel
+        self._of = OPTICAL_FLOWS.get(optical_flow)
         self._optical_flow = optical_flow
         self._cloud_mask_method = cloud_mask_method
         self._image_size = image_size
@@ -51,48 +63,68 @@ class FolsomForecastingDataset2D(Dataset):
     def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         period = self._periods[index]
 
-        history_item = period['history'][-1]
-        image_path = self._data_root / 'images' / history_item['image_name']
-        irradiance = history_item['irradiance'] / MAX_IRRADIANCE
-        image = np.asarray(Image.open(image_path))
+        source_images = []
+        source_irradiances = []
+        replay_data = None
+        flow = None
+        prev_image_gray = None
 
-        transformed = self._transforms(image=image)
+        for history_idx, history_item in enumerate(period['history']):
+            image_path = self._data_root / 'images' / history_item['image_name']
+            irradiance = history_item['irradiance'] / MAX_IRRADIANCE
+            image = np.asarray(Image.open(image_path))
 
-        image = transformed['image']
-        torch_image = torch.from_numpy(image).permute(2, 0, 1)
-
-        if self._add_sun_mask:
-            date = pd.to_datetime(image_path.name[:15], format='%Y%m%d_%H%M%S')
-            us_pacific_date = self.us_pacific.localize(date)
-            utc_date = us_pacific_date.astimezone(self.utc).strftime('%Y%m%d_%H%M%S')
-
-            sun_mask = self._sun_mask(image_shape=image.shape, timestamp=utc_date)
-            torch_image = torch.cat([torch_image, torch.from_numpy(sun_mask).permute(2, 0, 1)], dim=0)
-
-        if self._add_irradiance_channel:
-            if self._add_sun_mask:
-                torch_image[-1] *= irradiance
+            if replay_data is None:
+                transformed = self._transforms(image=image)
+                replay_data = transformed['replay']
             else:
-                torch_image = torch.cat([torch_image, torch.full((1, *torch_image.shape[1:]), irradiance)], dim=0)
+                transformed = self._transforms.replay(replay_data, image=image)
 
-        if self._cloud_mask_method is not None:
-            cloud_mask = self._cloud_mask(image=image)
-            torch_image = torch.cat([torch_image, torch.from_numpy(cloud_mask).permute(2, 0, 1)], dim=0)
+            image = transformed['image']
+            torch_image = torch.from_numpy(image).permute(2, 0, 1)
 
-        if self._optical_flow is not None:
-            flow_x_path = self._data_root.parent / 'flows' / self._optical_flow / history_item['image_name'].replace('.jpg', '_x.tiff')
-            flow_y_path = self._data_root.parent / 'flows' / self._optical_flow / history_item['image_name'].replace('.jpg', '_y.tiff')
+            if self._add_sun_mask:
+                date = pd.to_datetime(image_path.name[:15], format='%Y%m%d_%H%M%S')
+                us_pacific_date = self.us_pacific.localize(date)
+                utc_date = us_pacific_date.astimezone(self.utc).strftime('%Y%m%d_%H%M%S')
 
-            flow_x = np.asarray(Image.open(flow_x_path).resize(self._image_size))
-            flow_y = np.asarray(Image.open(flow_y_path).resize(self._image_size))
+                sun_mask = self._sun_mask(image_shape=image.shape, timestamp=utc_date)
+                torch_image = torch.cat([torch_image, torch.from_numpy(sun_mask).permute(2, 0, 1)], dim=0)
 
-            torch_image = torch.cat([torch_image, torch.from_numpy(flow_x).unsqueeze(0), torch.from_numpy(flow_y).unsqueeze(0)], dim=0)
+            if self._add_irradiance_channel:
+                if self._add_sun_mask:
+                    torch_image[-1] *= irradiance
+                else:
+                    torch_image = torch.cat([torch_image, torch.full((1, *torch_image.shape[1:]), irradiance)], dim=0)
 
-        source_irradiances = [h['irradiance'] / MAX_IRRADIANCE for h in period['history']]
+            if self._cloud_mask_method is not None:
+                cloud_mask = self._cloud_mask(image=image)
+                torch_image = torch.cat([torch_image, torch.from_numpy(cloud_mask).permute(2, 0, 1)], dim=0)
+
+            if self._optical_flow is not None:
+                image_gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+                if prev_image_gray is None:
+                    prev_image_gray = image_gray.copy()
+
+                try:
+                    flow = self._of.calc(prev_image_gray, image_gray, flow)
+                except:
+                    flow = np.zeros((image.shape[0], image.shape[1], 2), dtype=np.uint8)
+
+                prev_image_gray = image_gray
+
+                torch_image = torch.cat([torch_image, torch.from_numpy(flow).permute(2, 0, 1)], dim=0)
+                # torch_image = torch.cat([torch_image, torch.from_numpy(flow_x).unsqueeze(0), torch.from_numpy(flow_y).unsqueeze(0)], dim=0)
+
+            source_images.append(torch_image)
+            source_irradiances.append(irradiance)
+
         target_irradiance = period['target_irradiance'] / MAX_IRRADIANCE
 
+        image_input = source_images[-1]
+
         return (
-            torch_image,
+            image_input,
             torch.Tensor(source_irradiances),
             torch.Tensor([target_irradiance])
         )
