@@ -67,7 +67,7 @@ class FolsomForecastingDataset2D(Dataset):
         source_irradiances = []
         replay_data = None
         flow = None
-        prev_image_gray = None
+        prev_image = None
 
         for history_idx, history_item in enumerate(period['history']):
             image_path = self._data_root / 'images' / history_item['image_name']
@@ -102,16 +102,20 @@ class FolsomForecastingDataset2D(Dataset):
                 torch_image = torch.cat([torch_image, torch.from_numpy(cloud_mask).permute(2, 0, 1)], dim=0)
 
             if self._optical_flow is not None:
-                image_gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-                if prev_image_gray is None:
-                    prev_image_gray = image_gray.copy()
+                if self._optical_flow == 'dense_rlof':
+                    image_for_flow = image
+                else:
+                    image_for_flow = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+
+                if prev_image is None:
+                    prev_image = image_for_flow.copy()
 
                 try:
-                    flow = self._of.calc(prev_image_gray, image_gray, flow)
+                    flow = self._of.calc(prev_image, image_for_flow, flow)
                 except:
                     flow = np.zeros((image.shape[0], image.shape[1], 2), dtype=np.uint8)
 
-                prev_image_gray = image_gray
+                prev_image = image_for_flow
 
                 torch_image = torch.cat([torch_image, torch.from_numpy(flow).permute(2, 0, 1)], dim=0)
                 # torch_image = torch.cat([torch_image, torch.from_numpy(flow_x).unsqueeze(0), torch.from_numpy(flow_y).unsqueeze(0)], dim=0)
