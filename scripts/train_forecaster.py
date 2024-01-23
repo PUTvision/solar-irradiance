@@ -6,6 +6,7 @@ import dvc.api
 import lightning.pytorch as pl
 import onnx
 import torch
+from dotenv import find_dotenv, load_dotenv
 from lightning.pytorch.callbacks import ModelCheckpoint, ModelSummary, EarlyStopping, LearningRateMonitor
 from lightning.pytorch.loggers import NeptuneLogger
 from lightning.pytorch.strategies import DDPStrategy
@@ -23,6 +24,8 @@ log = utils.get_logger(__name__)
 @click.command()
 @click.option('--data-root', type=click.Path(exists=True, path_type=Path), required=True)
 def train_forecaster(data_root: Path):
+    load_dotenv(find_dotenv('.env'))
+
     data_cfg = OmegaConf.create(dvc.api.params_show()['export_periods'])
     cfg = OmegaConf.create(dvc.api.params_show()['train_forecaster'])
 

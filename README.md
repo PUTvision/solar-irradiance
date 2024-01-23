@@ -43,5 +43,5 @@ The data is stored in the [data](./data) directory. Preprocess steps are tracked
 * train
 
 ```shell
-python scripts/train_forecaster.py --data-root data/Prepared
+python -m scripts.train_forecaster --data-root data/Prepared
 ```

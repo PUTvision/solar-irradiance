@@ -133,6 +133,8 @@ class Forecaster(pl.LightningModule):
             self.loss = torch.nn.L1Loss()
         elif loss_function == 'SmoothL1':
             self.loss = torch.nn.SmoothL1Loss()
+        elif loss_function == 'Huber':
+            self.loss = torch.nn.HuberLoss(delta=0.1)
         elif loss_function == 'MAPE':
             self.loss = MAPELoss()
         elif loss_function == 'BerHu':
