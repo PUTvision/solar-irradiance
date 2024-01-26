@@ -42,14 +42,14 @@ train_forecaster:
   model:
     model_name: timm-resnet50
     compile: False
-    loss_function: MSE
+    loss_function: BerHu
     lr: 3e-4
     lr_patience: 5
 
   #### CALLBACKS ####
   callbacks:
     model_checkpoint:
-      monitor: "val_loss" # name of the logged metric which determines when model is improving
+      monitor: "val_MeanSquaredError" # name of the logged metric which determines when model is improving
       mode: "min" # can be "max" or "min"
       save_top_k: 1 # save k best models (determined by above metric)
       save_last: False # additionally, always save model from last epoch
@@ -58,9 +58,9 @@ train_forecaster:
       filename: "epoch_{epoch:03d}"
       auto_insert_metric_name: False
     early_stopping:
-      monitor: "val_loss" # name of the logged metric which determines when model is improving
+      monitor: "val_MeanSquaredError" # name of the logged metric which determines when model is improving
       mode: "min" # can be "max" or "min"
-      patience: 5 # how many validation epochs of not improving until training stops
+      patience: 10 # how many validation epochs of not improving until training stops
       min_delta: 0 # minimum change in the monitored metric needed to qualify as an improvement
 
   #### DATA ####

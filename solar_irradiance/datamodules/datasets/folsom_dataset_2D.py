@@ -71,7 +71,7 @@ class FolsomForecastingDataset2D(Dataset):
 
         for history_idx, history_item in enumerate(period['history']):
             image_path = self._data_root / 'images' / history_item['image_name']
-            irradiance = history_item['irradiance'] / MAX_IRRADIANCE
+            irradiance = history_item['irradiance'] #/ MAX_IRRADIANCE
             image = np.asarray(Image.open(image_path))
 
             if replay_data is None:
@@ -123,7 +123,7 @@ class FolsomForecastingDataset2D(Dataset):
             source_images.append(torch_image)
             source_irradiances.append(irradiance)
 
-        target_irradiance = period['target_irradiance'] / MAX_IRRADIANCE
+        target_irradiance = period['target_irradiance'] #/ MAX_IRRADIANCE
 
         image_input = source_images[-1]
 
