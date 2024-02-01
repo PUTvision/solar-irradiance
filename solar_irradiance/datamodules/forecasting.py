@@ -38,6 +38,8 @@ class ForecastingDataModule(LightningDataModule):
         self._augment = augment
         self._train_val_set_size = train_val_set_size
         self._image_size = image_size
+        self._image_mean = image_mean
+        self._image_std = image_std
         self._batch_size = batch_size
         self._workers = workers
         self._add_sun_mask = add_sun_mask
@@ -50,15 +52,13 @@ class ForecastingDataModule(LightningDataModule):
 
         self._transforms = A.ReplayCompose([
             A.Resize(image_size[1], image_size[0]),
-            A.Normalize(mean=image_mean, std=image_std),
         ])
         self._augmentations = A.ReplayCompose([
+            # transforms
+            A.Resize(image_size[1], image_size[0]),
             # geometry augmentations
             A.Affine(rotate=(-10, 10), translate_px=(-10, 10), scale=(0.9, 1.1)),
             A.Flip(),
-            # transforms
-            A.Resize(image_size[1], image_size[0]),
-            A.Normalize(mean=image_mean, std=image_std),
         ])
 
         self._train_dataset = None
@@ -95,6 +95,8 @@ class ForecastingDataModule(LightningDataModule):
             optical_flow=self._optical_flow,
             cloud_mask_method=self._cloud_mask_method,
             image_size=self._image_size,
+            image_mean=self._image_mean,
+            image_std=self._image_std,
         )
         self._val_dataset = self._dataset(
             data_root=self._data_root,
@@ -105,6 +107,8 @@ class ForecastingDataModule(LightningDataModule):
             optical_flow=self._optical_flow,
             cloud_mask_method=self._cloud_mask_method,
             image_size=self._image_size,
+            image_mean=self._image_mean,
+            image_std=self._image_std,
         )
         self._test_dataset = self._dataset(
             data_root=self._data_root,
@@ -115,6 +119,8 @@ class ForecastingDataModule(LightningDataModule):
             optical_flow=self._optical_flow,
             cloud_mask_method=self._cloud_mask_method,
             image_size=self._image_size,
+            image_mean=self._image_mean,
+            image_std=self._image_std,
         )
 
     def train_dataloader(self):

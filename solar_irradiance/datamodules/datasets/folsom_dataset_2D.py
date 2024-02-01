@@ -45,7 +45,9 @@ class FolsomForecastingDataset2D(Dataset):
             add_irradiance_channel: bool,
             optical_flow: Union[None, str],
             cloud_mask_method: Union[None, str],
-            image_size: Tuple[int, int],
+            image_size: Tuple[int],
+            image_mean: Tuple[float],
+            image_std: Tuple[float],
     ):
         self._data_root = data_root
         self._periods = periods
@@ -57,6 +59,17 @@ class FolsomForecastingDataset2D(Dataset):
         self._optical_flow = optical_flow
         self._cloud_mask_method = cloud_mask_method
         self._image_size = image_size
+        self._image_mean = image_mean
+        self._image_std = image_std
+
+        self._crop_mask = cv2.circle(
+            np.zeros((image_size[1], image_size[0], 3), dtype=np.uint8),
+            (image_size[1] // 2, image_size[0] // 2),
+            image_size[0] // 2,
+            color=(1, 1, 1),
+            thickness=-1,
+        )
+
         if self._cloud_mask_method is not None:
             self._cloud_mask = CloudMask(shape=self._image_size, method=cloud_mask_method)
 
@@ -81,7 +94,9 @@ class FolsomForecastingDataset2D(Dataset):
                 transformed = self._transforms.replay(replay_data, image=image)
 
             image = transformed['image']
-            torch_image = torch.from_numpy(image).permute(2, 0, 1)
+            norm_image = (image / 255. - self._image_mean) / self._image_std
+            cropped_image = np.where(self._crop_mask, norm_image, 0.).astype(np.float32)
+            torch_image = torch.from_numpy(cropped_image).permute(2, 0, 1)
 
             if self._add_sun_mask:
                 date = pd.to_datetime(image_path.name[:15], format='%Y%m%d_%H%M%S')
@@ -89,6 +104,7 @@ class FolsomForecastingDataset2D(Dataset):
                 utc_date = us_pacific_date.astimezone(self.utc).strftime('%Y%m%d_%H%M%S')
 
                 sun_mask = self._sun_mask(image_shape=image.shape, timestamp=utc_date)
+                sun_mask = self._transforms.replay(replay_data, image=sun_mask)['image']
                 torch_image = torch.cat([torch_image, torch.from_numpy(sun_mask).permute(2, 0, 1)], dim=0)
 
             if self._add_irradiance_channel:
@@ -110,15 +126,9 @@ class FolsomForecastingDataset2D(Dataset):
                 if prev_image is None:
                     prev_image = image_for_flow.copy()
 
-                try:
-                    flow = self._of.calc(prev_image, image_for_flow, flow)
-                except:
-                    flow = np.zeros((image.shape[0], image.shape[1], 2), dtype=np.uint8)
-
+                flow = self._of.calc(prev_image, image_for_flow, flow)
                 prev_image = image_for_flow
-
                 torch_image = torch.cat([torch_image, torch.from_numpy(flow).permute(2, 0, 1)], dim=0)
-                # torch_image = torch.cat([torch_image, torch.from_numpy(flow_x).unsqueeze(0), torch.from_numpy(flow_y).unsqueeze(0)], dim=0)
 
             source_images.append(torch_image)
             source_irradiances.append(irradiance)
