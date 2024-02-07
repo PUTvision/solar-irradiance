@@ -18,7 +18,7 @@ MAX_IRRADIANCE = 1466.0     # max irradiance in the dataset
 
 
 OPTICAL_FLOWS = {
-    'dis': cv2.DISOpticalFlow_create(preset=cv2.DISOPTICAL_FLOW_PRESET_FAST),
+    'dis': cv2.DISOpticalFlow_create(preset=cv2.DISOPTICAL_FLOW_PRESET_ULTRAFAST),
     'farneback': cv2.optflow.createOptFlow_Farneback(),
     'deep_flow': cv2.optflow.createOptFlow_DeepFlow(),
     'pca_flow': cv2.optflow.createOptFlow_PCAFlow(),
