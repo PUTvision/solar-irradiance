@@ -46,9 +46,15 @@ class CloudMask:
 
     def normalized_blue_red_ratio(self, img) -> np.ndarray:
         # https://journals.ametsoc.org/view/journals/atot/28/10/jtech-d-11-00009_1.xml
+        img[..., 0] = np.where(img[..., 2] == 0, img[..., 0] + 1, img[..., 0])
+        img[..., 2] = np.where(img[..., 2] == 0, img[..., 2] + 1, img[..., 2])
         img = img.astype(np.float32)
-        br_ratio = np.divide(img[..., 2], img[..., 0], out=np.zeros_like(img[..., 2]), where=img[..., 0] != 0)
-        mask = np.where(self.dist_mask > self.shape[0] // 2, 1, (br_ratio - 1) / (br_ratio + 1))
-        mask = np.where((-0.03 < mask) & (mask < 0.03), 255, 0).astype(np.uint8)
-        mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel=np.ones((5, 5), np.uint8), iterations=3)
-        return (mask / 255).astype(np.float32)
+        br_ratio = np.divide(img[..., 2], img[..., 0])
+
+        mask = (br_ratio - 1) / (br_ratio + 1)
+        mask = np.where(self.dist_mask > self.shape[0] // 2, 0, mask)
+
+        # mask = np.where(self.dist_mask > self.shape[0] // 2, 1, (br_ratio - 1) / (br_ratio + 1))
+        # mask = np.where((-0.03 < mask) & (mask < 0.03), 255, 0).astype(np.uint8)
+        # mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel=np.ones((5, 5), np.uint8), iterations=3)
+        return ((mask+256) / 512).astype(np.float32)
