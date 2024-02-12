@@ -8,10 +8,10 @@ class CloudMask:
     def __init__(self, shape: Tuple[int, int], method: str):
         self.shape = shape
         self.method = method
-        if self.method == 'blue_red_ratio':
-            self.segmentation_func = self.blue_red_ratio
-        elif self.method == 'blue_red_difference':
-            self.segmentation_func = self.blue_red_difference
+        if self.method == 'red_blue_ratio':
+            self.segmentation_func = self.red_blue_ratio
+        elif self.method == 'red_blue_difference':
+            self.segmentation_func = self.red_blue_difference
         elif self.method == 'normalized_blue_red_ratio':
             self.segmentation_func = self.normalized_blue_red_ratio
 
@@ -30,14 +30,19 @@ class CloudMask:
     def l2_distance(self, x_idx, y_idx) -> float:
         return np.sqrt((self.shape[1] // 2 - x_idx)**2 + (self.shape[0] // 2 - y_idx)**2)
 
-    def blue_red_ratio(self, img) -> np.ndarray:
+    def red_blue_ratio(self, img) -> np.ndarray:
+        # R2B https://journals.ametsoc.org/view/journals/atot/23/5/jtech1875_1.xml
+        img[..., 0] = np.where(img[..., 2] == 0, img[..., 0] + 1, img[..., 0])
+        img[..., 2] = np.where(img[..., 2] == 0, img[..., 2] + 1, img[..., 2])
         img = img.astype(np.float32)
-        mask = np.where(self.dist_mask > self.shape[0] // 2, 0, np.divide(img[..., 2], img[..., 0], out=np.zeros_like(img[..., 2]), where=img[..., 0] != 0))
-        return (mask / 255).astype(np.float32)
+        mask = np.divide(img[..., 0], img[..., 2])
+        mask = np.where(self.dist_mask > self.shape[0] // 2, 0, mask)
+        return (mask / 255).astype(np.float32) # scale to 0-1 range
 
-    def blue_red_difference(self, img) -> np.ndarray:
-        mask = np.where(self.dist_mask > self.shape[0] // 2, 0, img[..., 2] - img[..., 0])
-        return (mask / 255).astype(np.float32)
+    def red_blue_difference(self, img) -> np.ndarray:
+        # https://amt.copernicus.org/articles/3/557/2010/amt-3-557-2010.html
+        mask = np.where(self.dist_mask > self.shape[0] // 2, 0, img[..., 0] - img[..., 2])
+        return ((mask + 255) / 510).astype(np.float32) # scale to 0-1 range
 
     def normalized_blue_red_ratio(self, img) -> np.ndarray:
         # https://journals.ametsoc.org/view/journals/atot/28/10/jtech-d-11-00009_1.xml

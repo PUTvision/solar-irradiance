@@ -74,5 +74,5 @@ train_forecaster:
     workers: 32
     add_sun_mask: False
     add_irradiance_channel: False
-    cloud_mask_method: null # available: null, blue_red_ratio, blue_red_difference, normalized_blue_red_ratio
+    cloud_mask_method: null # available: null, red_blue_ratio, red_blue_difference, normalized_blue_red_ratio
     optical_flow: null # available: null, dis, farneback, deep_flow, pca_flow, dual_tvl1, dense_rlof
