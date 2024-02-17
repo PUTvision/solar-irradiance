@@ -37,6 +37,7 @@ stages:
     cmd: python ${export_periods.script_path}
          --cleaned-dataframe-path ${clean_dataframe.output_path}
          --time-window ${export_periods.time_window}
+         --time-shift ${export_periods.time_shift}
          --history-size ${export_periods.history_size}
          --output-path ${export_periods.output_path}
     deps:
@@ -44,6 +45,7 @@ stages:
       - ${clean_dataframe.output_path}
     params:
       - export_periods.time_window
+      - export_periods.time_shift
       - export_periods.history_size
     outs:
       - ${export_periods.output_path}

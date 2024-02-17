@@ -8,8 +8,9 @@ clean_dataframe:
 
 export_periods:
   script_path: scripts/export_periods.py
-  time_window: 15
-  history_size: 4
+  time_window: 15   # target forecasting horizon in minutes
+  time_shift: 5     # minutes between history samples
+  history_size: 4   # used history samples
   output_path: data/Prepared/periods.pickle
 
 export_eval_periods:
@@ -65,14 +66,14 @@ train_forecaster:
 
   #### DATA ####
   datamodule:
-    augment: False
+    augment: True
     train_val_set_size: 1.0 # size of the train and validation sets for experiments in relation to overall size; 0-1 range
     image_size: [ 128, 128 ]
     image_mean: [ 0.485, 0.456, 0.406 ]
     image_std: [ 0.229, 0.224, 0.225 ]
     batch_size: 128
     workers: 32
-    add_sun_mask: False
-    add_irradiance_channel: False
-    cloud_mask_method: null # available: null, red_blue_ratio, red_blue_difference, normalized_blue_red_ratio
-    optical_flow: null # available: null, dis, farneback, deep_flow, pca_flow, dual_tvl1, dense_rlof
+    add_sun_mask: True
+    add_irradiance_channel: True
+    cloud_mask_method: normalized_blue_red_ratio # available: null, red_blue_ratio, red_blue_difference, normalized_blue_red_ratio
+    optical_flow: dis # available: null, dis, farneback, deep_flow, pca_flow, dual_tvl1, dense_rlof
