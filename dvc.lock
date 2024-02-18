@@ -24,7 +24,7 @@ stages:
       size: 48285445
   export_periods:
     cmd: python scripts/export_periods.py --cleaned-dataframe-path data/Prepared/cleaned_irradiance.csv
-      --time-window 15 --history-size 4 --output-path data/Prepared/periods.pickle
+      --time-window 15 --time-shift 5 --history-size 4 --output-path data/Prepared/periods.pickle
     deps:
     - path: data/Prepared/cleaned_irradiance.csv
       hash: md5
@@ -32,11 +32,12 @@ stages:
       size: 48285445
     - path: scripts/export_periods.py
       hash: md5
-      md5: d23621f6bc71efe8133965110e5a1411
-      size: 1853
+      md5: f51810d75754aa1f645b9c96d18791cd
+      size: 1797
     params:
       params.yaml:
         export_periods.history_size: 4
+        export_periods.time_shift: 5
         export_periods.time_window: 15
     outs:
     - path: data/Prepared/periods.pickle
@@ -119,24 +120,28 @@ stages:
             add_sun_mask: false
             add_irradiance_channel: true
   export_eval_periods:
-    cmd: python scripts/export_eval_periods.py --periods_path data/Prepared/periods.pickle
-      --data_root data/Folsom --output_path data/Eval
+    cmd: python scripts/export_eval_periods.py --data-prepared-path data/Prepared
+      --output-path data/Eval
     deps:
-    - path: data/Folsom
+    - path: data/Prepared/images/
       hash: md5
-      md5: 1a067740695b101faef4ac7b7a6c721b.dir
-      size: 64100647697
-      nfiles: 775917
+      md5: dd6cd7f293eaf3dfb5178f5bd19c0097.dir
+      size: 63904746427
+      nfiles: 773978
     - path: data/Prepared/periods.pickle
       hash: md5
-      md5: ab55d2ce456144bae9c846b24eb19f7d
-      size: 7629468
+      md5: 9c700ecfb772e166291f52f0e95fb51a
+      size: 127096187
+    - path: scripts/export_eval_periods.py
+      hash: md5
+      md5: 3088a867d0b29c9a5dc904fae2a1b2a6
+      size: 1391
     outs:
     - path: data/Eval
       hash: md5
-      md5: 3d18746ef1cbf3079ecd7c0041aa2361.dir
-      size: 120850958
-      nfiles: 1519
+      md5: ab553f8ccc61584092378cf54bc169be.dir
+      size: 332972404
+      nfiles: 3998
   convert_timestamps:
     cmd: python scripts/convert_timestamps.py --data-raw data/Raw --output-path data/Prepared/images
     deps:

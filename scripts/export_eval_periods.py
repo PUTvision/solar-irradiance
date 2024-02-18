@@ -15,7 +15,8 @@ def export_eval_periods(data_prepared_path: Path, output_path: Path):
     with Path(data_prepared_path / 'periods.pickle').open('rb') as f:
         periods = pd.read_pickle(f)
 
-    _, eval_periods = train_test_split(periods, test_size=0.01, random_state=42, shuffle=True)
+    test_size = 1000 / len(periods)
+    _, eval_periods = train_test_split(periods, test_size=test_size, random_state=42, shuffle=True)
 
     print(f'Number of periods: {len(eval_periods)}')
     output_path = Path(output_path)
