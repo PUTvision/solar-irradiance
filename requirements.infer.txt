@@ -1,5 +1,5 @@
 # --------- inference --------- #
-# onnxruntimei-gpu==1.16.0 # build from source for specific hardware
+# onnxruntimei-gpu==1.17.0 # build from source for specific hardware
 
 # --------- dvc --------- #
 dvc[s3]==3.5.1
