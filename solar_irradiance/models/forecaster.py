@@ -16,6 +16,7 @@ from solar_irradiance.models.architectures.swin_transformer import swin3d_b, swi
 class Forecaster(pl.LightningModule):
     def __init__(self,
                  model_name: str,
+                 pretrained: bool,
                  input_channels: int,
                  loss_function: str,
                  lr: float,
@@ -26,13 +27,8 @@ class Forecaster(pl.LightningModule):
                  ):
         super().__init__()
 
-        self._model_name = model_name
-        self._input_channels = input_channels
-        self._loss_function = loss_function
         self._lr = lr
         self._lr_patience = lr_patience
-        self._history_size = history_size
-        self._image_size = image_size
 
         if model_name == 'swin3d_b':
             self.network = swin3d_b(weights=Swin3D_B_Weights.KINETICS400_IMAGENET22K_V1, progress=True)
@@ -47,45 +43,45 @@ class Forecaster(pl.LightningModule):
             self.num_features = self.network.num_features
             self.network.head = torch.nn.Identity()
         elif model_name == 'r3d_18':
-            self.network = r3d_18(weights=R3D_18_Weights.KINETICS400_V1, progress=True, in_channels=self._input_channels)
+            self.network = r3d_18(weights=R3D_18_Weights.KINETICS400_V1, progress=True, in_channels=input_channels)
             self.num_features = self.network.fc.in_features
             self.network.fc = torch.nn.Identity()
         elif model_name == 'mc3_18':
-            self.network = mc3_18(weights=MC3_18_Weights.KINETICS400_V1, progress=True, in_channels=self._input_channels)
+            self.network = mc3_18(weights=MC3_18_Weights.KINETICS400_V1, progress=True, in_channels=input_channels)
             self.num_features = self.network.fc.in_features
             self.network.fc = torch.nn.Identity()
         elif model_name == 'r2plus1d_18':
-            self.network = r2plus1d_18(weights=R2Plus1D_18_Weights.KINETICS400_V1, progress=True, in_channels=self._input_channels)
+            self.network = r2plus1d_18(weights=R2Plus1D_18_Weights.KINETICS400_V1, progress=True, in_channels=input_channels)
             self.num_features = self.network.fc.in_features
             self.network.fc = torch.nn.Identity()
         elif model_name == 'timesformer':
             config = TimesformerConfig()
-            config.num_channels = self._input_channels
-            config.image_size = self._image_size[0]
-            config.num_frames = self._history_size
+            config.num_channels = input_channels
+            config.image_size = image_size[0]
+            config.num_frames = history_size
             self.network = TimesformerModel.from_pretrained("facebook/timesformer-base-finetuned-k400", config=config, ignore_mismatched_sizes=True, resume_download=True)
             self.num_features = config.hidden_size
         elif model_name == 'videomae':
             config = VideoMAEConfig()
-            config.num_channels = self._input_channels
-            config.image_size = self._image_size[0]
-            config.num_frames = self._history_size
+            config.num_channels = input_channels
+            config.image_size = image_size[0]
+            config.num_frames = history_size
             self.network = VideoMAEModel.from_pretrained("MCG-NJU/videomae-base-finetuned-kinetics", config=config, ignore_mismatched_sizes=True, resume_download=True)
             self.num_features = config.hidden_size
         elif model_name == 'vivit':
             config = VivitConfig()
-            config.num_channels = self._input_channels
-            config.image_size = self._image_size[0]
-            config.num_frames = self._history_size
+            config.num_channels = input_channels
+            config.image_size = image_size[0]
+            config.num_frames = history_size
             self.network = VivitModel.from_pretrained("google/vivit-b-16x2-kinetics400", config=config, ignore_mismatched_sizes=True, resume_download=True)
             self.num_features = config.hidden_size
         elif model_name == 'mvit':
             from mmaction.models.backbones import MViT
 
             self.network = MViT(
-                spatial_size=self._image_size[0],
-                temporal_size=self._history_size,
-                in_channels=self._input_channels,
+                spatial_size=image_size[0],
+                temporal_size=history_size,
+                in_channels=input_channels,
                 pretrained='mvit-small-p244_32xb16-16x4x1-200e_kinetics400-rgb',
                 pretrained_type='imagenet',
             )
@@ -94,8 +90,8 @@ class Forecaster(pl.LightningModule):
             from mmaction.models.backbones import UniFormerV2
 
             self.network = UniFormerV2(
-                input_resolution=self._image_size[0],
-                t_size=self._history_size,
+                input_resolution=image_size[0],
+                t_size=history_size,
                 pretrained='uniformerv2-base-p16-res224_clip_8xb32-u8_kinetics400-rgb',
             )
             self.network.conv1 = torch.nn.Conv3d(in_channels=4, out_channels=768, kernel_size=(1, 16, 16), stride=(1, 16, 16), bias=False)
@@ -107,15 +103,15 @@ class Forecaster(pl.LightningModule):
             config = _C.MODEL.MoViNetA4
             self.network = MoViNet(config, causal=False, pretrained=True)
             self.network.conv1.conv_1.conv3d = torch.nn.Conv3d(
-                in_channels=self._input_channels, out_channels=24, kernel_size=(1, 3, 3), stride=(1, 2, 2), bias=False)
+                in_channels=input_channels, out_channels=24, kernel_size=(1, 3, 3), stride=(1, 2, 2), bias=False)
             self.num_features = self.network.classifier[0].conv_1.conv3d.in_channels
             self.network.classifier = torch.nn.Identity()
         elif model_name.startswith('timm-'):
             self.network = timm.create_model(
                 model_name.replace('timm-', ''),
-                pretrained=True,
+                pretrained=pretrained,
                 num_classes=1,
-                in_chans=self._input_channels,
+                in_chans=input_channels,
             )
             self.num_features = self.network.fc.in_features
             self.network.fc = torch.nn.Identity()

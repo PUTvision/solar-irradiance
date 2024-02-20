@@ -57,6 +57,7 @@ def train_forecaster(data_root: Path):
 
     model = Forecaster(
         model_name=cfg.model.model_name,
+        pretrained=cfg.model.pretrained,
         input_channels=input_channels,
         loss_function=cfg.model.loss_function,
         lr=cfg.model.lr,
