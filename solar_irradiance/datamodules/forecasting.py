@@ -57,7 +57,7 @@ class ForecastingDataModule(LightningDataModule):
             # transforms
             A.Resize(image_size[1], image_size[0]),
             # geometry augmentations
-            A.Affine(rotate=(-10, 10), translate_px=(-10, 10), scale=(0.9, 1.1)),
+            A.Affine(rotate=(-10, 10), translate_percent=(-10, 10), scale=(0.9, 1.1)),
             A.Flip(),
         ])
 
