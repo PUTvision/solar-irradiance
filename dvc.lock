@@ -24,7 +24,7 @@ stages:
       size: 48285445
   export_periods:
     cmd: python scripts/export_periods.py --cleaned-dataframe-path data/Prepared/cleaned_irradiance.csv
-      --time-window 15 --history-size 4 --output-path data/Prepared/periods.pickle
+      --time-window 15 --time-shift 5 --history-size 4 --output-path data/Prepared/periods.pickle
     deps:
     - path: data/Prepared/cleaned_irradiance.csv
       hash: md5
@@ -32,17 +32,18 @@ stages:
       size: 48285445
     - path: scripts/export_periods.py
       hash: md5
-      md5: d23621f6bc71efe8133965110e5a1411
-      size: 1853
+      md5: f51810d75754aa1f645b9c96d18791cd
+      size: 1797
     params:
       params.yaml:
         export_periods.history_size: 4
+        export_periods.time_shift: 5
         export_periods.time_window: 15
     outs:
     - path: data/Prepared/periods.pickle
       hash: md5
-      md5: 9c700ecfb772e166291f52f0e95fb51a
-      size: 127096187
+      md5: ee85f8d8652dd1d5316e5938d9cbdd0b
+      size: 127096188
   train_forecaster:
     cmd: python scripts/train_forecaster.py --data-root data/Folsom --periods-path
       data/Prepared/periods.pickle
