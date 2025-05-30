@@ -42,8 +42,8 @@ stages:
     outs:
     - path: data/Prepared/periods.pickle
       hash: md5
-      md5: 9c700ecfb772e166291f52f0e95fb51a
-      size: 127096187
+      md5: ee85f8d8652dd1d5316e5938d9cbdd0b
+      size: 127096188
   train_forecaster:
     cmd: python scripts/train_forecaster.py --data-root data/Folsom --periods-path
       data/Prepared/periods.pickle

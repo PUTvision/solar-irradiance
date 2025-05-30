@@ -42,6 +42,7 @@ train_forecaster:
   #### MODEL ####
   model:
     model_name: timm-resnet50
+    pretrained: False
     compile: False
     loss_function: BerHu
     lr: 3e-4
