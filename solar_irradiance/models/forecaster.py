@@ -115,6 +115,11 @@ class Forecaster(pl.LightningModule):
             )
             self.num_features = self.network.fc.in_features
             self.network.fc = torch.nn.Identity()
+        elif model_name == 'xception':
+            from solar_irradiance.models.architectures.venitourakis_xception_image_encoder import XceptionImageEncoder
+
+            self.network = XceptionImageEncoder(in_channels=input_channels)
+            self.num_features = 128
 
         self.num_features += 4  # Add 4 historical irradiances
         self.network_head = torch.nn.Sequential(
