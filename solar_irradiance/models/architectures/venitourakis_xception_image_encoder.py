@@ -46,13 +46,8 @@ class XceptionImageEncoder(nn.Module):
     def __init__(self, in_channels=3):
         super(XceptionImageEncoder, self).__init__()
 
-        self.initial_conv = nn.Sequential(
-            nn.Conv2d(in_channels, 64, kernel_size=3, stride=1, padding=1),
-            nn.LeakyReLU(negative_slope=0.1125, inplace=True)
-        )
-        
         self.entry_flow = nn.Sequential(
-            XceptionLayer(in_channels=64, out_channels=64),
+            XceptionLayer(in_channels=in_channels, out_channels=64),
             nn.MaxPool2d(kernel_size=2, stride=2),
             XceptionLayer(in_channels=64, out_channels=128),
         )
@@ -80,7 +75,6 @@ class XceptionImageEncoder(nn.Module):
         )
 
     def forward(self, x):
-        x = self.initial_conv(x)
         entry_flow_y = self.entry_flow(x)
 
         skip_connection_1_y = self.skip_connection_flow_1(entry_flow_y)
