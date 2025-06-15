@@ -16,6 +16,7 @@ click==8.1.5
 #mmaction2==1.1.0
 #mmcv==2.0.1
 #mmengine==0.8.4
+numpy==1.26.4
 opencv-contrib-python==4.10.0.84
 pandas==2.2.3
 pvlib==0.10.1
