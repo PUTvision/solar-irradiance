@@ -42,7 +42,7 @@ train_forecaster:
   #### MODEL ####
   model:
     model_name: timm-resnet50
-    pretrained: False
+    pretrained: True
     compile: False
     loss_function: BerHu
     lr: 3e-4
@@ -73,7 +73,7 @@ train_forecaster:
     image_mean: [ 0.485, 0.456, 0.406 ]
     image_std: [ 0.229, 0.224, 0.225 ]
     batch_size: 128
-    workers: 32
+    workers: 16
     add_sun_mask: True
     add_irradiance_channel: True
     cloud_mask_method: normalized_blue_red_ratio # available: null, red_blue_ratio, red_blue_difference, normalized_blue_red_ratio
