@@ -102,7 +102,7 @@ def evaluate(model_path, dims, provider, add_sun_mask, add_irradiance_channel, c
     of = OPTICAL_FLOWS.get(optical_flow)
 
     crop_mask = cv2.circle(
-        np.zeros((input_shape[1], input_shape[0], 3), dtype=np.uint8),
+        np.zeros((input_shape[0], input_shape[1], 3), dtype=np.uint8),
         (input_shape[1] // 2, input_shape[0] // 2),
         input_shape[0] // 2,
         color=(1, 1, 1),
