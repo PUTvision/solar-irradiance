@@ -139,7 +139,7 @@ def evaluate(model_path, dims, provider, add_sun_mask, add_irradiance_channel, c
 
             preprocessing_start = time.time()
             source_image = cv2.resize(source_image, input_shape)
-            source_image = np.where(crop_mask, source_image, 0)
+            source_image = np.where(crop_mask.astype(bool), source_image, 0)
             input_data = preprocess(source_image)
             preprocessing_time.append(time.time() - preprocessing_start)
 
