@@ -1,8 +1,9 @@
+from collections.abc import Callable, Sequence
 from functools import partial
-from typing import Any, Callable, List, Optional, Sequence, Tuple, Type, Union
+from typing import Any
 
-import torch.nn as nn
 from torch import Tensor
+import torch.nn as nn
 from torchvision.models import WeightsEnum
 from torchvision.models._utils import _ModelURLs, _ovewrite_named_param, handle_legacy_interface
 
@@ -16,16 +17,14 @@ __all__ = [
     "r2plus1d_18",
 ]
 
-from torchvision.models.video import R3D_18_Weights, MC3_18_Weights, R2Plus1D_18_Weights
-
+from torchvision.models.video import MC3_18_Weights, R2Plus1D_18_Weights, R3D_18_Weights
 from torchvision.utils import _log_api_usage_once
 
 
 class Conv3DSimple(nn.Conv3d):
     def __init__(
-        self, in_planes: int, out_planes: int, midplanes: Optional[int] = None, stride: int = 1, padding: int = 1
+        self, in_planes: int, out_planes: int, midplanes: int | None = None, stride: int = 1, padding: int = 1
     ) -> None:
-
         super().__init__(
             in_channels=in_planes,
             out_channels=out_planes,
@@ -36,7 +35,7 @@ class Conv3DSimple(nn.Conv3d):
         )
 
     @staticmethod
-    def get_downsample_stride(stride: int) -> Tuple[int, int, int]:
+    def get_downsample_stride(stride: int) -> tuple[int, int, int]:
         return stride, stride, stride
 
 
@@ -59,15 +58,14 @@ class Conv2Plus1D(nn.Sequential):
         )
 
     @staticmethod
-    def get_downsample_stride(stride: int) -> Tuple[int, int, int]:
+    def get_downsample_stride(stride: int) -> tuple[int, int, int]:
         return stride, stride, stride
 
 
 class Conv3DNoTemporal(nn.Conv3d):
     def __init__(
-        self, in_planes: int, out_planes: int, midplanes: Optional[int] = None, stride: int = 1, padding: int = 1
+        self, in_planes: int, out_planes: int, midplanes: int | None = None, stride: int = 1, padding: int = 1
     ) -> None:
-
         super().__init__(
             in_channels=in_planes,
             out_channels=out_planes,
@@ -78,12 +76,11 @@ class Conv3DNoTemporal(nn.Conv3d):
         )
 
     @staticmethod
-    def get_downsample_stride(stride: int) -> Tuple[int, int, int]:
+    def get_downsample_stride(stride: int) -> tuple[int, int, int]:
         return 1, stride, stride
 
 
 class BasicBlock(nn.Module):
-
     expansion = 1
 
     def __init__(
@@ -92,7 +89,7 @@ class BasicBlock(nn.Module):
         planes: int,
         conv_builder: Callable[..., nn.Module],
         stride: int = 1,
-        downsample: Optional[nn.Module] = None,
+        downsample: nn.Module | None = None,
     ) -> None:
         midplanes = (inplanes * planes * 3 * 3 * 3) // (inplanes * 3 * 3 + 3 * planes)
 
@@ -128,9 +125,8 @@ class Bottleneck(nn.Module):
         planes: int,
         conv_builder: Callable[..., nn.Module],
         stride: int = 1,
-        downsample: Optional[nn.Module] = None,
+        downsample: nn.Module | None = None,
     ) -> None:
-
         super().__init__()
         midplanes = (inplanes * planes * 3 * 3 * 3) // (inplanes * 3 * 3 + 3 * planes)
 
@@ -196,9 +192,9 @@ class R2Plus1dStem(nn.Sequential):
 class VideoResNet(nn.Module):
     def __init__(
         self,
-        block: Type[Union[BasicBlock, Bottleneck]],
-        conv_makers: Sequence[Type[Union[Conv3DSimple, Conv3DNoTemporal, Conv2Plus1D]]],
-        layers: List[int],
+        block: type[BasicBlock | Bottleneck],
+        conv_makers: Sequence[type[Conv3DSimple | Conv3DNoTemporal | Conv2Plus1D]],
+        layers: list[int],
         stem: Callable[..., nn.Module],
         num_classes: int = 400,
         zero_init_residual: bool = False,
@@ -263,8 +259,8 @@ class VideoResNet(nn.Module):
 
     def _make_layer(
         self,
-        block: Type[Union[BasicBlock, Bottleneck]],
-        conv_builder: Type[Union[Conv3DSimple, Conv3DNoTemporal, Conv2Plus1D]],
+        block: type[BasicBlock | Bottleneck],
+        conv_builder: type[Conv3DSimple | Conv3DNoTemporal | Conv2Plus1D],
         planes: int,
         blocks: int,
         stride: int = 1,
@@ -288,11 +284,11 @@ class VideoResNet(nn.Module):
 
 
 def _video_resnet(
-    block: Type[Union[BasicBlock, Bottleneck]],
-    conv_makers: Sequence[Type[Union[Conv3DSimple, Conv3DNoTemporal, Conv2Plus1D]]],
-    layers: List[int],
+    block: type[BasicBlock | Bottleneck],
+    conv_makers: Sequence[type[Conv3DSimple | Conv3DNoTemporal | Conv2Plus1D]],
+    layers: list[int],
     stem: Callable[..., nn.Module],
-    weights: Optional[WeightsEnum],
+    weights: WeightsEnum | None,
     progress: bool,
     **kwargs: Any,
 ) -> VideoResNet:
@@ -303,14 +299,16 @@ def _video_resnet(
 
     if weights is not None:
         state_dict = weights.get_state_dict(progress=progress)
-        del state_dict['stem.0.weight']
+        del state_dict["stem.0.weight"]
         model.load_state_dict(state_dict, strict=False)
 
     return model
 
 
 @handle_legacy_interface(weights=("pretrained", R3D_18_Weights.KINETICS400_V1))
-def r3d_18(*, weights: Optional[R3D_18_Weights] = None, progress: bool = True, in_channels: int = 3, **kwargs: Any) -> VideoResNet:
+def r3d_18(
+    *, weights: R3D_18_Weights | None = None, progress: bool = True, in_channels: int = 3, **kwargs: Any
+) -> VideoResNet:
     """Construct 18 layer Resnet3D model.
 
     .. betastatus:: video module
@@ -346,7 +344,9 @@ def r3d_18(*, weights: Optional[R3D_18_Weights] = None, progress: bool = True, i
 
 
 @handle_legacy_interface(weights=("pretrained", MC3_18_Weights.KINETICS400_V1))
-def mc3_18(*, weights: Optional[MC3_18_Weights] = None, progress: bool = True, in_channels: int = 3, **kwargs: Any) -> VideoResNet:
+def mc3_18(
+    *, weights: MC3_18_Weights | None = None, progress: bool = True, in_channels: int = 3, **kwargs: Any
+) -> VideoResNet:
     """Construct 18 layer Mixed Convolution network as in
 
     .. betastatus:: video module
@@ -382,7 +382,9 @@ def mc3_18(*, weights: Optional[MC3_18_Weights] = None, progress: bool = True, i
 
 
 @handle_legacy_interface(weights=("pretrained", R2Plus1D_18_Weights.KINETICS400_V1))
-def r2plus1d_18(*, weights: Optional[R2Plus1D_18_Weights] = None, progress: bool = True, in_channels: int = 3, **kwargs: Any) -> VideoResNet:
+def r2plus1d_18(
+    *, weights: R2Plus1D_18_Weights | None = None, progress: bool = True, in_channels: int = 3, **kwargs: Any
+) -> VideoResNet:
     """Construct 18 layer deep R(2+1)D network as in
 
     .. betastatus:: video module

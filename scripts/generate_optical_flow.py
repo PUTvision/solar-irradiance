@@ -1,12 +1,11 @@
 from pathlib import Path
 
-import cv2
 import click
+import cv2
 import numpy as np
 import pandas as pd
 from PIL import Image
 from tqdm import tqdm
-
 
 OPTICAL_FLOWS = {
     "dis": cv2.DISOpticalFlow_create(preset=cv2.DISOPTICAL_FLOW_PRESET_FAST),
@@ -19,23 +18,41 @@ OPTICAL_FLOWS = {
 
 
 @click.command()
-@click.option("--optical_flow", help="Add optical flow to input data", type=click.Choice(["dis", "farneback", "deep_flow", "pca_flow", "dual_tvl1", "dense_rlof"]), default=None)
-@click.option("--periods_path", help="Data frame with evaluation periods", type=click.Path(exists=True, file_okay=True), default="data/Prepared/periods.pickle")
-@click.option("--dataset_path", help="Path to dataset image directory", type=click.Path(exists=True, dir_okay=True), default="data/Folsom/images")
-def generate_optical_flow(optical_flow, periods_path, dataset_path):
-    periods_path = Path(periods_path)
+@click.option(
+    "--optical_flow",
+    help="Add optical flow to input data",
+    type=click.Choice(["dis", "farneback", "deep_flow", "pca_flow", "dual_tvl1", "dense_rlof"]),
+    default=None,
+)
+@click.option(
+    "--periods_path",
+    help="Data frame with evaluation periods",
+    type=click.Path(exists=True, file_okay=True, path_type=Path),
+    default="data/Prepared/periods.pickle",
+)
+@click.option(
+    "--dataset_path",
+    help="Path to dataset image directory",
+    type=click.Path(exists=True, dir_okay=True, path_type=Path),
+    default="data/Folsom/images",
+)
+def generate_optical_flow(optical_flow, periods_path: Path, dataset_path: Path):
     Path(periods_path.parents[1], "flows", optical_flow).mkdir(parents=True, exist_ok=True)
     of = OPTICAL_FLOWS.get(optical_flow)
 
-    with open(periods_path, "rb") as f:
+    with periods_path.open("rb") as f:
         periods = pd.read_pickle(f)
 
     for p in tqdm(periods):
         flow = None
         prev_image = None
 
-        flow_x_path = Path(periods_path.resolve().parents[1], "flows", optical_flow, p["history"][-1]["image_name"].replace(".jpg", "_x.tiff"))
-        flow_y_path = Path(periods_path.resolve().parents[1], "flows", optical_flow, p["history"][-1]["image_name"].replace(".jpg", "_y.tiff"))
+        flow_x_path = Path(
+            periods_path.resolve().parents[1], "flows", optical_flow, p["history"][-1]["image_name"].replace(".jpg", "_x.tiff")
+        )
+        flow_y_path = Path(
+            periods_path.resolve().parents[1], "flows", optical_flow, p["history"][-1]["image_name"].replace(".jpg", "_y.tiff")
+        )
 
         if flow_x_path.is_file() and flow_y_path.is_file():
             continue

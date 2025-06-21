@@ -1,121 +1,135 @@
-from typing import Optional, List
-
 import lightning.pytorch as pl
 import timm
 import torch
-import torchmetrics
 from torch.optim import Optimizer
-from torchvision.models.video import R3D_18_Weights, Swin3D_T_Weights, Swin3D_S_Weights, Swin3D_B_Weights, MC3_18_Weights, R2Plus1D_18_Weights
+import torchmetrics
+from torchvision.models.video import (
+    MC3_18_Weights,
+    R2Plus1D_18_Weights,
+    R3D_18_Weights,
+    Swin3D_B_Weights,
+    Swin3D_S_Weights,
+    Swin3D_T_Weights,
+)
 from transformers import TimesformerConfig, TimesformerModel, VideoMAEConfig, VideoMAEModel, VivitConfig, VivitModel
 
 from solar_irradiance.losses import MAPELoss, MeanAdaptiveBerHuLoss
-from solar_irradiance.models.architectures.resnet import r3d_18, mc3_18, r2plus1d_18
-from solar_irradiance.models.architectures.swin_transformer import swin3d_b, swin3d_t, swin3d_s
+from solar_irradiance.models.architectures.resnet import mc3_18, r2plus1d_18, r3d_18
+from solar_irradiance.models.architectures.swin_transformer import swin3d_b, swin3d_s, swin3d_t
 
 
 class Forecaster(pl.LightningModule):
-    def __init__(self,
-                 model_name: str,
-                 pretrained: bool,
-                 input_channels: int,
-                 loss_function: str,
-                 lr: float,
-                 lr_patience: int,
-                 time_window: int,
-                 history_size: int,
-                 image_size: List[int],
-                 ):
+    def __init__(
+        self,
+        model_name: str,
+        pretrained: bool,
+        input_channels: int,
+        loss_function: str,
+        lr: float,
+        lr_patience: int,
+        history_size: int,
+        image_size: list[int],
+    ) -> None:
         super().__init__()
 
         self._lr = lr
         self._lr_patience = lr_patience
 
-        if model_name == 'swin3d_b':
+        if model_name == "swin3d_b":
             self.network = swin3d_b(weights=Swin3D_B_Weights.KINETICS400_IMAGENET22K_V1, progress=True)
             self.num_features = self.network.num_features
             self.network.head = torch.nn.Identity()
-        elif model_name == 'swin3d_t':
+        elif model_name == "swin3d_t":
             self.network = swin3d_t(weights=Swin3D_T_Weights.KINETICS400_V1, progress=True)
             self.num_features = self.network.num_features
             self.network.head = torch.nn.Identity()
-        elif model_name == 'swin3d_s':
+        elif model_name == "swin3d_s":
             self.network = swin3d_s(weights=Swin3D_S_Weights.KINETICS400_V1, progress=True)
             self.num_features = self.network.num_features
             self.network.head = torch.nn.Identity()
-        elif model_name == 'r3d_18':
+        elif model_name == "r3d_18":
             self.network = r3d_18(weights=R3D_18_Weights.KINETICS400_V1, progress=True, in_channels=input_channels)
             self.num_features = self.network.fc.in_features
             self.network.fc = torch.nn.Identity()
-        elif model_name == 'mc3_18':
+        elif model_name == "mc3_18":
             self.network = mc3_18(weights=MC3_18_Weights.KINETICS400_V1, progress=True, in_channels=input_channels)
             self.num_features = self.network.fc.in_features
             self.network.fc = torch.nn.Identity()
-        elif model_name == 'r2plus1d_18':
+        elif model_name == "r2plus1d_18":
             self.network = r2plus1d_18(weights=R2Plus1D_18_Weights.KINETICS400_V1, progress=True, in_channels=input_channels)
             self.num_features = self.network.fc.in_features
             self.network.fc = torch.nn.Identity()
-        elif model_name == 'timesformer':
+        elif model_name == "timesformer":
             config = TimesformerConfig()
             config.num_channels = input_channels
             config.image_size = image_size[0]
             config.num_frames = history_size
-            self.network = TimesformerModel.from_pretrained("facebook/timesformer-base-finetuned-k400", config=config, ignore_mismatched_sizes=True, resume_download=True)
+            self.network = TimesformerModel.from_pretrained(
+                "facebook/timesformer-base-finetuned-k400", config=config, ignore_mismatched_sizes=True, resume_download=True
+            )
             self.num_features = config.hidden_size
-        elif model_name == 'videomae':
+        elif model_name == "videomae":
             config = VideoMAEConfig()
             config.num_channels = input_channels
             config.image_size = image_size[0]
             config.num_frames = history_size
-            self.network = VideoMAEModel.from_pretrained("MCG-NJU/videomae-base-finetuned-kinetics", config=config, ignore_mismatched_sizes=True, resume_download=True)
+            self.network = VideoMAEModel.from_pretrained(
+                "MCG-NJU/videomae-base-finetuned-kinetics", config=config, ignore_mismatched_sizes=True, resume_download=True
+            )
             self.num_features = config.hidden_size
-        elif model_name == 'vivit':
+        elif model_name == "vivit":
             config = VivitConfig()
             config.num_channels = input_channels
             config.image_size = image_size[0]
             config.num_frames = history_size
-            self.network = VivitModel.from_pretrained("google/vivit-b-16x2-kinetics400", config=config, ignore_mismatched_sizes=True, resume_download=True)
+            self.network = VivitModel.from_pretrained(
+                "google/vivit-b-16x2-kinetics400", config=config, ignore_mismatched_sizes=True, resume_download=True
+            )
             self.num_features = config.hidden_size
-        elif model_name == 'mvit':
+        elif model_name == "mvit":
             from mmaction.models.backbones import MViT
 
             self.network = MViT(
                 spatial_size=image_size[0],
                 temporal_size=history_size,
                 in_channels=input_channels,
-                pretrained='mvit-small-p244_32xb16-16x4x1-200e_kinetics400-rgb',
-                pretrained_type='imagenet',
+                pretrained="mvit-small-p244_32xb16-16x4x1-200e_kinetics400-rgb",
+                pretrained_type="imagenet",
             )
             self.num_features = self.network.norm3.normalized_shape[0]
-        elif model_name == 'uniformerv2':
+        elif model_name == "uniformerv2":
             from mmaction.models.backbones import UniFormerV2
 
             self.network = UniFormerV2(
                 input_resolution=image_size[0],
                 t_size=history_size,
-                pretrained='uniformerv2-base-p16-res224_clip_8xb32-u8_kinetics400-rgb',
+                pretrained="uniformerv2-base-p16-res224_clip_8xb32-u8_kinetics400-rgb",
             )
-            self.network.conv1 = torch.nn.Conv3d(in_channels=4, out_channels=768, kernel_size=(1, 16, 16), stride=(1, 16, 16), bias=False)
+            self.network.conv1 = torch.nn.Conv3d(
+                in_channels=4, out_channels=768, kernel_size=(1, 16, 16), stride=(1, 16, 16), bias=False
+            )
             self.num_features = self.network.transformer.norm.normalized_shape[0]
-        elif model_name == 'movinet':
+        elif model_name == "movinet":
             from movinets import MoViNet
             from movinets.config import _C
 
             config = _C.MODEL.MoViNetA4
             self.network = MoViNet(config, causal=False, pretrained=True)
             self.network.conv1.conv_1.conv3d = torch.nn.Conv3d(
-                in_channels=input_channels, out_channels=24, kernel_size=(1, 3, 3), stride=(1, 2, 2), bias=False)
+                in_channels=input_channels, out_channels=24, kernel_size=(1, 3, 3), stride=(1, 2, 2), bias=False
+            )
             self.num_features = self.network.classifier[0].conv_1.conv3d.in_channels
             self.network.classifier = torch.nn.Identity()
-        elif model_name.startswith('timm-'):
+        elif model_name.startswith("timm-"):
             self.network = timm.create_model(
-                model_name.replace('timm-', ''),
+                model_name.replace("timm-", ""),
                 pretrained=pretrained,
                 num_classes=1,
                 in_chans=input_channels,
             )
             self.num_features = self.network.fc.in_features
             self.network.fc = torch.nn.Identity()
-        elif model_name == 'xception':
+        elif model_name == "xception":
             from solar_irradiance.models.architectures.venitourakis_xception_image_encoder import XceptionImageEncoder
 
             self.network = XceptionImageEncoder(in_channels=input_channels)
@@ -128,34 +142,36 @@ class Forecaster(pl.LightningModule):
             torch.nn.Linear(256, 1),
         )
 
-        if loss_function == 'MSE':
+        if loss_function == "MSE":
             self.loss = torch.nn.MSELoss()
-        elif loss_function == 'MAE':
+        elif loss_function == "MAE":
             self.loss = torch.nn.L1Loss()
-        elif loss_function == 'SmoothL1':
+        elif loss_function == "SmoothL1":
             self.loss = torch.nn.SmoothL1Loss()
-        elif loss_function == 'Huber':
+        elif loss_function == "Huber":
             self.loss = torch.nn.HuberLoss(delta=0.1)
-        elif loss_function == 'MAPE':
+        elif loss_function == "MAPE":
             self.loss = MAPELoss()
-        elif loss_function == 'BerHu':
+        elif loss_function == "BerHu":
             self.loss = MeanAdaptiveBerHuLoss()
         else:
-            raise NotImplementedError(f'Unsupported loss function: {loss_function}')
+            raise NotImplementedError(f"Unsupported loss function: {loss_function}")
 
-        metrics = torchmetrics.MetricCollection([
-            torchmetrics.MeanSquaredError(),
-            torchmetrics.MeanAbsoluteError(),
-            torchmetrics.MeanAbsolutePercentageError(),
-        ])
+        metrics = torchmetrics.MetricCollection(
+            [
+                torchmetrics.MeanSquaredError(),
+                torchmetrics.MeanAbsoluteError(),
+                torchmetrics.MeanAbsolutePercentageError(),
+            ]
+        )
 
-        self.train_metrics = metrics.clone('train_')
-        self.val_metrics = metrics.clone('val_')
-        self.test_metrics = metrics.clone('test_')
+        self.train_metrics = metrics.clone("train_")
+        self.val_metrics = metrics.clone("val_")
+        self.test_metrics = metrics.clone("test_")
 
         self.save_hyperparameters()
 
-    def optimizer_zero_grad(self, epoch: int, batch_idx: int, optimizer: Optimizer):
+    def optimizer_zero_grad(self, epoch: int, batch_idx: int, optimizer: Optimizer) -> None:
         optimizer.zero_grad(set_to_none=True)
 
     def forward(self, x: torch.Tensor, irradiance_history: torch.Tensor) -> torch.Tensor:
@@ -165,7 +181,7 @@ class Forecaster(pl.LightningModule):
         x = self.network_head(torch.cat([x, irradiance_history], dim=1))
         return x
 
-    def training_step(self, batch: torch.Tensor, batch_idx: int) -> Optional[torch.Tensor]:
+    def training_step(self, batch: torch.Tensor, batch_idx: int) -> torch.Tensor | None:
         source_images, source_irradiances, target_irradiances = batch
         predicted_irradiances = self.forward(source_images, source_irradiances)
 
@@ -173,7 +189,7 @@ class Forecaster(pl.LightningModule):
         if torch.isinf(loss):
             return None
 
-        self.log('train_loss', loss, on_step=True, on_epoch=True, sync_dist=True, prog_bar=True)
+        self.log("train_loss", loss, on_step=True, on_epoch=True, sync_dist=True, prog_bar=True)
         self.train_metrics.update(predicted_irradiances, target_irradiances)
         self.log_dict(self.train_metrics, sync_dist=True)
 
@@ -185,33 +201,24 @@ class Forecaster(pl.LightningModule):
 
         loss = self.loss(predicted_irradiances, target_irradiances)
 
-        self.log('val_loss', loss, on_step=False, on_epoch=True, sync_dist=True)
+        self.log("val_loss", loss, on_step=False, on_epoch=True, sync_dist=True)
         self.val_metrics.update(predicted_irradiances, target_irradiances)
         self.log_dict(self.val_metrics, sync_dist=True)
 
-    def test_step(self, batch: torch.Tensor, batch_idx: int):
+    def test_step(self, batch: torch.Tensor, batch_idx: int) -> None:
         source_images, source_irradiances, target_irradiances = batch
         predicted_irradiances = self.forward(source_images, source_irradiances)
 
         loss = self.loss(predicted_irradiances, target_irradiances)
 
-        self.log('test_loss', loss, on_step=False, on_epoch=True, sync_dist=True)
+        self.log("test_loss", loss, on_step=False, on_epoch=True, sync_dist=True)
         self.test_metrics.update(predicted_irradiances, target_irradiances)
         self.log_dict(self.test_metrics, sync_dist=True)
 
-    def configure_optimizers(self):
+    def configure_optimizers(self) -> dict:
         optimizer = torch.optim.AdamW(self.parameters(), lr=self._lr)
         reduce_lr_on_plateau = torch.optim.lr_scheduler.ReduceLROnPlateau(
-            optimizer,
-            mode='min',
-            factor=0.5,
-            patience=self._lr_patience,
-            min_lr=1e-6,
-            verbose=True
+            optimizer, mode="min", factor=0.5, patience=self._lr_patience, min_lr=1e-6, verbose=True
         )
 
-        return {
-            'optimizer': optimizer,
-            'lr_scheduler': reduce_lr_on_plateau,
-            'monitor': 'train_loss_epoch'
-        }
+        return {"optimizer": optimizer, "lr_scheduler": reduce_lr_on_plateau, "monitor": "train_loss_epoch"}

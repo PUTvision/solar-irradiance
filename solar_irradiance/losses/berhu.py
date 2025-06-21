@@ -2,15 +2,16 @@
 The BerHu penalty and the grouped effect
 https://arxiv.org/abs/1207.6868
 """
+
 import torch.nn
 
 
 class MeanAdaptiveBerHuLoss(torch.nn.Module):
     def __init__(self):
-        super(MeanAdaptiveBerHuLoss, self).__init__()
+        super().__init__()
 
     def forward(self, pred, target):
-        """ Computes BerHu loss function
+        """Computes BerHu loss function
 
         l1_thresh = 0.2 * maximum difference in a batch
 

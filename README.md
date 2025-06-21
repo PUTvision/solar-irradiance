@@ -2,19 +2,26 @@
 
 
 ## **Overview**
-> PyTorch repository for solar irradiance forecasting task with DVC, PyTorch, Lightning, and Neptune included.
+> Bag of tricks for ground-based solar irradiance forecasting using sky images.
 
 
 ## Table of Contents
 * [Requirements](#requirements)
+* [Methods](#methods)
 * [Data](#data)
-* [Project Structure](#project-structure)
 * [Usage](#usage)
 
 ## Requirements
 
-* Python *3.10.0*
-* Python packages from the *[requirements.txt](./requirements.txt)* file
+* Python *3.12.6*
+* Python packages defined in the *[pyproject.toml](./pyproject.toml)* file
+
+## Methods
+
+1. Sun mask
+2. Irradiance channel
+3. Optical flow
+4. Cloud channel
 
 ## Data
 

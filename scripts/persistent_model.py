@@ -1,20 +1,26 @@
-import pandas as pd
+from pathlib import Path
+
 import click
+import pandas as pd
 import torch
-from torchmetrics.functional.regression import mean_absolute_percentage_error, mean_absolute_error, mean_squared_error
+from torchmetrics.functional.regression import mean_absolute_error, mean_absolute_percentage_error, mean_squared_error
 from tqdm import tqdm
 
-
-MAX_IRRADIANCE = 1466.0     # max irradiance in the dataset
+MAX_IRRADIANCE = 1466.0  # max irradiance in the dataset
 
 
 @click.command()
-@click.option("--periods_path", help="Data frame with evaluation periods", type=click.Path(exists=True, file_okay=True), default="data/Prepared/periods.pickle")
-def evaluate_persistent_model(periods_path):
-    with open(periods_path, "rb") as f:
+@click.option(
+    "--periods_path",
+    help="Data frame with evaluation periods",
+    type=click.Path(exists=True, file_okay=True, path_type=Path),
+    default="data/Prepared/periods.pickle",
+)
+def evaluate_persistent_model(periods_path: Path):
+    with periods_path.open("rb") as f:
         periods = pd.read_pickle(f)
 
-    test_periods = list(filter(lambda p: p['history'][-1]['image_name'].startswith('2014'), periods))
+    test_periods = list(filter(lambda p: p["history"][-1]["image_name"].startswith("2014"), periods))
 
     target = []
     preds = []
@@ -44,5 +50,5 @@ def evaluate_persistent_model(periods_path):
     print(f"RMSE [W/m^2]: {rmse*MAX_IRRADIANCE}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     evaluate_persistent_model()

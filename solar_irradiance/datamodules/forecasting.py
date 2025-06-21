@@ -1,34 +1,33 @@
 from pathlib import Path
-from typing import Tuple, Union
 
 import albumentations as A
+from lightning import LightningDataModule
 import numpy as np
 import pandas as pd
-import torch.utils.data
-from lightning import LightningDataModule
 from sklearn.model_selection import train_test_split
+import torch.utils.data
 
 from solar_irradiance.datamodules.datasets import FolsomForecastingDataset2D, FolsomForecastingDataset3D
 
 
 class ForecastingDataModule(LightningDataModule):
     def __init__(
-            self,
-            root_data_path: Path,
-            periods_path: Path,
-            augment: bool,
-            train_val_set_size: float,
-            image_size: Tuple[int, int],
-            image_mean: Tuple[float, float, float],
-            image_std: Tuple[float, float, float],
-            batch_size: int,
-            workers: int,
-            add_sun_mask: bool,
-            add_irradiance_channel: bool,
-            optical_flow: Union[None, str],
-            cloud_mask_method: Union[None, str],
-            model_2D: bool,
-            seed: int,
+        self,
+        root_data_path: Path,
+        periods_path: Path,
+        augment: bool,
+        train_val_set_size: float,
+        image_size: tuple[int, int],
+        image_mean: tuple[float, float, float],
+        image_std: tuple[float, float, float],
+        batch_size: int,
+        workers: int,
+        add_sun_mask: bool,
+        add_irradiance_channel: bool,
+        optical_flow: None | str,
+        cloud_mask_method: None | str,
+        model_2d: bool,
+        seed: int,
     ):
         super().__init__()
 
@@ -48,40 +47,48 @@ class ForecastingDataModule(LightningDataModule):
         self._cloud_mask_method = cloud_mask_method
         self._seed = seed
 
-        self._dataset = FolsomForecastingDataset2D if model_2D else FolsomForecastingDataset3D
+        self._dataset = FolsomForecastingDataset2D if model_2d else FolsomForecastingDataset3D
 
-        self._transforms = A.ReplayCompose([
-            A.Resize(image_size[1], image_size[0]),
-        ])
-        self._augmentations = A.ReplayCompose([
-            # transforms
-            A.Resize(image_size[1], image_size[0]),
-            # geometry augmentations
-            A.Affine(rotate=(-10, 10), translate_percent=(-10, 10), scale=(0.9, 1.1)),
-            A.HorizontalFlip(),
-            A.VerticalFlip(),
-        ])
+        self._transforms = A.ReplayCompose(
+            [
+                A.Resize(image_size[1], image_size[0]),
+            ]
+        )
+        self._augmentations = A.ReplayCompose(
+            [
+                # transforms
+                A.Resize(image_size[1], image_size[0]),
+                # geometry augmentations
+                A.Affine(rotate=(-10, 10), translate_percent=(-10, 10), scale=(0.9, 1.1)),
+                A.HorizontalFlip(),
+                A.VerticalFlip(),
+            ]
+        )
 
         self._train_dataset = None
         self._val_dataset = None
         self._test_dataset = None
 
     def setup(self, stage: str) -> None:
-        with self._periods_path.open('rb') as f:
+        with self._periods_path.open("rb") as f:
             periods = pd.read_pickle(f)
 
-        test_periods = list(filter(lambda p: p['history'][-1]['image_name'].startswith('2014'), periods))
-        train_val_periods = list(filter(lambda p: not p['history'][-1]['image_name'].startswith('2014'), periods))
+        test_periods = list(filter(lambda p: p["history"][-1]["image_name"].startswith("2014"), periods))
+        train_val_periods = list(filter(lambda p: not p["history"][-1]["image_name"].startswith("2014"), periods))
 
         size = 170  # number of days for validatation dataset to get 80-20 ratio of train-val datasets
         np.random.seed(self._seed)
-        val_dates = [str(y) + str(m).zfill(2) + str(d).zfill(2) for y, m, d in zip(
-            np.random.randint(2015, 2017, size=size),
-            np.random.randint(1, 13, size=size),
-            np.random.randint(1, 29, size=size),
-        )]
-        val_periods = list(filter(lambda p: p['history'][-1]['image_name'][:8] in val_dates, train_val_periods))
-        train_periods = list(filter(lambda p: p['history'][-1]['image_name'][:8] not in val_dates, train_val_periods))
+        val_dates = [
+            str(y) + str(m).zfill(2) + str(d).zfill(2)
+            for y, m, d in zip(
+                np.random.randint(2015, 2017, size=size),
+                np.random.randint(1, 13, size=size),
+                np.random.randint(1, 29, size=size),
+                strict=False,
+            )
+        ]
+        val_periods = list(filter(lambda p: p["history"][-1]["image_name"][:8] in val_dates, train_val_periods))
+        train_periods = list(filter(lambda p: p["history"][-1]["image_name"][:8] not in val_dates, train_val_periods))
 
         if self._train_val_set_size < 1:
             val_periods, __ = train_test_split(val_periods, train_size=self._train_val_set_size, random_state=self._seed)
@@ -126,18 +133,20 @@ class ForecastingDataModule(LightningDataModule):
 
     def train_dataloader(self):
         return torch.utils.data.DataLoader(
-            self._train_dataset, batch_size=self._batch_size, num_workers=self._workers,
-            pin_memory=True, drop_last=True, shuffle=True
+            self._train_dataset,
+            batch_size=self._batch_size,
+            num_workers=self._workers,
+            pin_memory=True,
+            drop_last=True,
+            shuffle=True,
         )
 
     def val_dataloader(self):
         return torch.utils.data.DataLoader(
-            self._val_dataset, batch_size=self._batch_size, num_workers=self._workers,
-            pin_memory=True
+            self._val_dataset, batch_size=self._batch_size, num_workers=self._workers, pin_memory=True
         )
 
     def test_dataloader(self):
         return torch.utils.data.DataLoader(
-            self._test_dataset, batch_size=self._batch_size, num_workers=self._workers,
-            pin_memory=True
+            self._test_dataset, batch_size=self._batch_size, num_workers=self._workers, pin_memory=True
         )
