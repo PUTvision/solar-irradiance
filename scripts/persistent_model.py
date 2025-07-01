@@ -14,7 +14,7 @@ MAX_IRRADIANCE = 1466.0  # max irradiance in the dataset
     "--periods_path",
     help="Data frame with evaluation periods",
     type=click.Path(exists=True, file_okay=True, path_type=Path),
-    default="data/Prepared/periods.pickle",
+    default="data/prepared/periods.pickle",
 )
 def evaluate_persistent_model(periods_path: Path):
     with periods_path.open("rb") as f:

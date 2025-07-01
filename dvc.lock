@@ -1,15 +1,15 @@
 schema: '2.0'
 stages:
   clean_dataframe:
-    cmd: python scripts/clean_dataframe.py --data-raw data/Raw --images-path data/Prepared/images
-      --output-path data/Prepared/cleaned_irradiance.csv
+    cmd: python scripts/clean_dataframe.py --data-raw data/raw --images-path data/prepared/images
+      --output-path data/prepared/cleaned_irradiance.csv
     deps:
-    - path: data/Prepared/images
+    - path: data/prepared/images
       hash: md5
       md5: dd6cd7f293eaf3dfb5178f5bd19c0097.dir
       size: 63904746427
       nfiles: 773978
-    - path: data/Raw/Folsom_irradiance.csv
+    - path: data/raw/Folsom_irradiance.csv
       hash: md5
       md5: f7deba7ccd089dbd3f52a46405a7dfc2
       size: 76536976
@@ -18,15 +18,15 @@ stages:
       md5: 496c3732d2858e429230b0cbac4510b0
       size: 1579
     outs:
-    - path: data/Prepared/cleaned_irradiance.csv
+    - path: data/prepared/cleaned_irradiance.csv
       hash: md5
       md5: 04425339057a4d994421b7b02a7b97f5
       size: 48285445
   export_periods:
-    cmd: python scripts/export_periods.py --cleaned-dataframe-path data/Prepared/cleaned_irradiance.csv
-      --time-window 15 --time-shift 5 --history-size 4 --output-path data/Prepared/periods.pickle
+    cmd: python scripts/export_periods.py --cleaned-dataframe-path data/prepared/cleaned_irradiance.csv
+      --time-window 15 --time-shift 5 --history-size 4 --output-path data/prepared/periods.pickle
     deps:
-    - path: data/Prepared/cleaned_irradiance.csv
+    - path: data/prepared/cleaned_irradiance.csv
       hash: md5
       md5: 04425339057a4d994421b7b02a7b97f5
       size: 48285445
@@ -40,20 +40,20 @@ stages:
         export_periods.time_shift: 5
         export_periods.time_window: 15
     outs:
-    - path: data/Prepared/periods.pickle
+    - path: data/prepared/periods.pickle
       hash: md5
       md5: ee85f8d8652dd1d5316e5938d9cbdd0b
       size: 127096188
   train_forecaster:
     cmd: python scripts/train_forecaster.py --data-root data/Folsom --periods-path
-      data/Prepared/periods.pickle
+      data/prepared/periods.pickle
     deps:
     - path: data/Folsom
       hash: md5
       md5: 1a067740695b101faef4ac7b7a6c721b.dir
       size: 64100647697
       nfiles: 775917
-    - path: data/Prepared/periods.pickle
+    - path: data/prepared/periods.pickle
       hash: md5
       md5: 036a030ad1c057517cc40f5056b035d7
       size: 7965007
@@ -120,15 +120,15 @@ stages:
             add_sun_mask: false
             add_irradiance_channel: true
   export_eval_periods:
-    cmd: python scripts/export_eval_periods.py --data-prepared-path data/Prepared
-      --output-path data/Eval
+    cmd: python scripts/export_eval_periods.py --data-prepared-path data/prepared
+      --output-path data/eval
     deps:
-    - path: data/Prepared/images/
+    - path: data/prepared/images/
       hash: md5
       md5: dd6cd7f293eaf3dfb5178f5bd19c0097.dir
       size: 63904746427
       nfiles: 773978
-    - path: data/Prepared/periods.pickle
+    - path: data/prepared/periods.pickle
       hash: md5
       md5: 9c700ecfb772e166291f52f0e95fb51a
       size: 127096187
@@ -137,15 +137,15 @@ stages:
       md5: 3088a867d0b29c9a5dc904fae2a1b2a6
       size: 1391
     outs:
-    - path: data/Eval
+    - path: data/eval
       hash: md5
       md5: ab553f8ccc61584092378cf54bc169be.dir
       size: 332972404
       nfiles: 3998
   convert_timestamps:
-    cmd: python scripts/convert_timestamps.py --data-raw data/Raw --output-path data/Prepared/images
+    cmd: python scripts/convert_timestamps.py --data-raw data/raw --output-path data/prepared/images
     deps:
-    - path: data/Raw/images/
+    - path: data/raw/images/
       hash: md5
       md5: 234b68378a387383601e76c4800ec5b7.dir
       size: 63496
@@ -155,7 +155,7 @@ stages:
       md5: f38bbee75b58b0acb9dcb88ce5f3a601
       size: 920
     outs:
-    - path: data/Prepared/images
+    - path: data/prepared/images
       hash: md5
       md5: dd6cd7f293eaf3dfb5178f5bd19c0097.dir
       size: 63904746427
@@ -163,11 +163,11 @@ stages:
   get_data:
     cmd: bash scripts/get_data.sh
     outs:
-    - path: data/Raw/Folsom_irradiance.csv
+    - path: data/raw/Folsom_irradiance.csv
       hash: md5
       md5: f7deba7ccd089dbd3f52a46405a7dfc2
       size: 76536976
-    - path: data/Raw/images/
+    - path: data/raw/images/
       hash: md5
       md5: de689666f9b1cf3c403f9de20e84e378.dir
       size: 64056845701

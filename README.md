@@ -1,4 +1,4 @@
-# Solar Irradiance Forecasting
+# Bag of tricks for irradiance forecasting
 
 
 ## **Overview**
@@ -7,8 +7,8 @@
 
 ## Table of Contents
 * [Requirements](#requirements)
-* [Methods](#methods)
-* [Data](#data)
+* [Sky image enhancement methods](#sky-image-enhancement-methods)
+* [Dataset](#dataset)
 * [Usage](#usage)
 
 ## Requirements
@@ -16,24 +16,24 @@
 * Python *3.12.6*
 * Python packages defined in the *[pyproject.toml](./pyproject.toml)* file
 
-## Methods
+```bash
+pip install -e .[dev]
+```
+
+## Sky image enhancement methods
 
 1. Sun mask
 2. Irradiance channel
 3. Optical flow
 4. Cloud channel
 
-## Data
+## Dataset
 
 <div align="center">
 
 |           **Task**          |                        **Dataset**                       |             **Samples**             | **Used** |
 |:---------------------------:|:--------------------------------------------------------:|:-----------------------------------:|:--------:|
 | Solar Irradiance Regression |        [Folsom](https://zenodo.org/record/2826939)       |   3 years  (sampled every minute)   |     *    |
-| Solar Irradiance Regression |       [SIRTA](https://sirta.ipsl.fr/data-overview/)      | 8 years  (sampled every two minute) |          |
-| Solar Irradiance Regression | [Girasol](https://datadryad.org/stash/dataset/doi%253A10.5061%252Fdryad.zcrjdfn9m) | 244 individual days from 3 years period | |
-|      Cloud Segmentation     | [SWINySEG](http://vintage.winklerbros.net/swinyseg.html) |                 6768                |          |
-|      Cloud Segmentation     |        [HYTA](https://github.com/Soumyabrata/HYTA)       |                  32                 |          |
 
 </div>
 
@@ -41,14 +41,27 @@ The data is stored in the [data](./data) directory. Preprocess steps are tracked
 
 ### Data Structure
 
-- **Raw** - irradiance CSV and sky images extracted directly from files downloaded from [Folsom](https://zenodo.org/record/2826939) dataset
-- **Prepared** - processed data (filtered, timestamp moved to local timezone, grouped in periods)
-- **Eval** - small subset extracted for evaluation purposes
+```console
+data/
+├── raw
+├── prepared
+└── eval
+```
+
+- **raw** - raw irradiance CSV and sky images extracted directly from files downloaded from Folsom [Zenodo](https://zenodo.org/record/2826939) page
+- **prepared** - processed data (filtered, timestamp moved to local timezone, corrupted images removed, and grouped into periods)
+- **eval** - small subset extracted for evaluation purposes
 
 ## Usage
 
-* train
+1. **Train**
 
 ```shell
-python -m scripts.train_forecaster --data-root data/Prepared
+python -m scripts.train_forecaster --data-root data/prepared
 ```
+
+2. **Test**
+
+Change `test_only: True` and provide path to checkpoint `restore_from_ckpt: path/to/checkpoint`. Then call train script.
+
+3. **Evaluate**

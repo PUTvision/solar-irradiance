@@ -87,13 +87,13 @@ def preprocess(img_data: np.ndarray) -> np.ndarray:
     "--eval_periods_path",
     help="Data frame with evaluation periods",
     type=click.Path(exists=True, file_okay=True, path_type=Path),
-    default="data/Eval/eval_periods.pickle",
+    default="data/eval/eval_periods.pickle",
 )
 @click.option(
     "--dataset_path",
     help="Path to dataset image directory",
     type=click.Path(exists=True, dir_okay=True, path_type=Path),
-    default="data/Eval/images",
+    default="data/eval/images",
 )
 def evaluate(
     model_path: Path,
