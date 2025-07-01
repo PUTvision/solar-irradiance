@@ -7,7 +7,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 import torch.utils.data
 
-from solar_irradiance.datamodules.datasets import FolsomForecastingDataset2D, FolsomForecastingDataset3D
+from solar_irradiance.datamodules.datasets import FolsomForecastingDataset2D
 
 
 class ForecastingDataModule(LightningDataModule):
@@ -26,7 +26,6 @@ class ForecastingDataModule(LightningDataModule):
         add_irradiance_channel: bool,
         optical_flow: None | str,
         cloud_mask_method: None | str,
-        model_2d: bool,
         seed: int,
     ):
         super().__init__()
@@ -46,8 +45,6 @@ class ForecastingDataModule(LightningDataModule):
         self._optical_flow = optical_flow
         self._cloud_mask_method = cloud_mask_method
         self._seed = seed
-
-        self._dataset = FolsomForecastingDataset2D if model_2d else FolsomForecastingDataset3D
 
         self._transforms = A.ReplayCompose(
             [
@@ -94,7 +91,7 @@ class ForecastingDataModule(LightningDataModule):
             val_periods, __ = train_test_split(val_periods, train_size=self._train_val_set_size, random_state=self._seed)
             train_periods, __ = train_test_split(train_periods, train_size=self._train_val_set_size, random_state=self._seed)
 
-        self._train_dataset = self._dataset(
+        self._train_dataset = FolsomForecastingDataset2D(
             data_root=self._data_root,
             periods=train_periods,
             transforms=self._augmentations if self._augment else self._transforms,
@@ -106,7 +103,7 @@ class ForecastingDataModule(LightningDataModule):
             image_mean=self._image_mean,
             image_std=self._image_std,
         )
-        self._val_dataset = self._dataset(
+        self._val_dataset = FolsomForecastingDataset2D(
             data_root=self._data_root,
             periods=val_periods,
             transforms=self._transforms,
@@ -118,7 +115,7 @@ class ForecastingDataModule(LightningDataModule):
             image_mean=self._image_mean,
             image_std=self._image_std,
         )
-        self._test_dataset = self._dataset(
+        self._test_dataset = FolsomForecastingDataset2D(
             data_root=self._data_root,
             periods=test_periods,
             transforms=self._transforms,

@@ -26,7 +26,6 @@ log = utils.get_logger(__name__)
 def train_forecaster(data_root: Path):
     load_dotenv(find_dotenv(".env"))
 
-    data_cfg = OmegaConf.create(dvc.api.params_show()["export_periods"])
     cfg = OmegaConf.create(dvc.api.params_show()["train_forecaster"])
 
     pl.seed_everything(seed=cfg.seed)
@@ -45,13 +44,12 @@ def train_forecaster(data_root: Path):
         add_irradiance_channel=cfg.datamodule.add_irradiance_channel,
         optical_flow=cfg.datamodule.optical_flow,
         cloud_mask_method=cfg.datamodule.cloud_mask_method,
-        model_2d=cfg.model.model_name.startswith("timm-"),
         seed=cfg.seed,
     )
 
     # 3 from RGB channels
     # additional channel with sun position mask or irradiance value or their combination
-    # 2 channels from opttical flow (X, Y directions)
+    # 2 channels from optical flow (X and Y directions)
     optical_flow_channels = 0 if cfg.datamodule.optical_flow is None else 2
     input_channels = (
         3
@@ -67,8 +65,6 @@ def train_forecaster(data_root: Path):
         loss_function=cfg.model.loss_function,
         lr=cfg.model.lr,
         lr_patience=cfg.model.lr_patience,
-        history_size=data_cfg.history_size,
-        image_size=cfg.datamodule.image_size,
     )
 
     checkpoint_callback = ModelCheckpoint(**cfg.callbacks.model_checkpoint)
@@ -85,8 +81,8 @@ def train_forecaster(data_root: Path):
     if not cfg.debug:
         logger = NeptuneLogger(
             api_key=os.environ["NEPTUNE_API_TOKEN"],
-            project="Vision/IrradianceRegression",
-            log_model_checkpoints=True,
+            project=os.environ["NEPTUNE_PROJECT_NAME"],
+            log_model_checkpoints=False,
         )
         callbacks.append(lr_monitor)
 
