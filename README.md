@@ -22,10 +22,26 @@ pip install -e .[dev]
 
 ## Sky image enhancement methods
 
-1. Sun mask
-2. Irradiance channel
-3. Optical flow
-4. Cloud channel
+<details>
+<summary>1. Sun mask</summary>
+
+</details>
+
+<details>
+<summary>2. Irradiance channel</summary>
+
+</details>
+
+<details>
+<summary>3. Optical flow</summary>
+
+</details>
+
+<details>
+<summary>4. Cloud channel</summary>
+
+</details>
+
 
 ## Dataset
 
@@ -39,7 +55,43 @@ pip install -e .[dev]
 
 The data is stored in the [data](./data) directory. Preprocess steps are tracked by DVC and described in [dvc.yaml](./dvc.yaml)
 
-### Data Structure
+<details>
+<summary>1. DVC DAG (Directed Acyclic Graph)</summary>
+
+```console
+                                         +----------+
+                                        *| get_data |**
+                                   ***** +----------+  ******
+                             ******                          *****
+                        *****                                     *****
+                     ***                                               ******
+     +--------------------+                                                  ***
+     | convert_timestamps |*****                                               *
+     +--------------------+     ***********                                    *
+       ***             ***                 ***********                         *
+    ***                   ***                         ***********              *
+  **                         **                                  ******        *
+**                             **                                    +-----------------+
+*                               *                                    | clean_dataframe |
+*                               *                                    +-----------------+
+*                               *                                     ***            ***
+*                               *                                   **                  ***
+*                               *                                 **                       **
+***                             ***                   +----------------+                    ***
+   *****                           *****              | export_periods |               *****
+        *****                           ******    ****+----------------+          *****
+             *****                           ******            *             *****
+                  *****                ******      *****        *       *****
+                       ***          ***                 ***     *    ***
+                   +---------------------+            +------------------+
+                   | export_eval_periods |            | train_forecaster |
+                   +---------------------+            +------------------+
+```
+
+</details>
+
+<details>
+<summary>2. Data structure</summary>
 
 ```console
 data/
@@ -51,6 +103,8 @@ data/
 - **raw** - raw irradiance CSV and sky images extracted directly from files downloaded from Folsom [Zenodo](https://zenodo.org/record/2826939) page
 - **prepared** - processed data (filtered, timestamp moved to local timezone, corrupted images removed, and grouped into periods)
 - **eval** - small subset extracted for evaluation purposes
+
+</details>
 
 ## Usage
 

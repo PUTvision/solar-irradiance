@@ -22,15 +22,57 @@ class Forecaster(pl.LightningModule):
         self._lr = lr
         self._lr_patience = lr_patience
 
-        if model_name.startswith("timm-"):
+        if "resne" in model_name:
             self.network = timm.create_model(
-                model_name.replace("timm-", ""),
+                model_name,
                 pretrained=pretrained,
                 num_classes=1,
                 in_chans=input_channels,
             )
             self.num_features = self.network.fc.in_features
             self.network.fc = torch.nn.Identity()
+        elif "mixnet" in model_name or "efficientnet" in model_name or "mobilenet" in model_name:
+            self.network = timm.create_model(
+                model_name,
+                pretrained=pretrained,
+                num_classes=1,
+                in_chans=input_channels,
+            )
+            self.num_features = self.network.classifier.in_features
+            self.network.classifier = torch.nn.Identity()
+        elif (
+            "mambaout" in model_name
+            or "convnext" in model_name
+            or "convformer" in model_name
+            or "mvitv2" in model_name
+            or "regnet" in model_name
+        ):
+            self.network = timm.create_model(
+                model_name,
+                pretrained=pretrained,
+                num_classes=1,
+                in_chans=input_channels,
+            )
+            self.num_features = self.network.head.fc.in_features
+            self.network.head.fc = torch.nn.Identity()
+        elif "efficientvit" in model_name:
+            self.network = timm.create_model(
+                model_name,
+                pretrained=pretrained,
+                num_classes=1,
+                in_chans=input_channels,
+            )
+            self.num_features = self.network.head.classifier[-1].in_features
+            self.network.head.classifier[-1] = torch.nn.Identity()
+        elif "mvitv2" in model_name:
+            self.network = timm.create_model(
+                model_name,
+                pretrained=pretrained,
+                num_classes=1,
+                in_chans=input_channels,
+            )
+            self.num_features = self.network.head.fc.in_features
+            self.network.head = torch.nn.Identity()
         elif model_name == "venitourakis_xception":
             from solar_irradiance.models.architectures.venitourakis_xception_image_encoder import XceptionImageEncoder
 
