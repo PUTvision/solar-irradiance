@@ -1,19 +1,23 @@
 # Bag of tricks for irradiance forecasting
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.15792283.svg)](https://doi.org/10.5281/zenodo.15792283)
 
-## **Overview**
+
 > Bag of tricks for ground-based solar irradiance forecasting using sky images.
 
-<p align="center">
-     <img src=".images/algorithm.png">
-</p>
-
 ## Table of Contents
+* [Overview](#overview)
 * [Requirements](#requirements)
 * [Sky image enhancement methods](#sky-image-enhancement-methods)
 * [Dataset](#dataset)
 * [Usage](#usage)
 * [Results](#results)
+
+## Overview
+
+<p align="center">
+     <img src=".images/algorithm.png">
+</p>
 
 ## Requirements
 
@@ -76,7 +80,7 @@ Visualisation of utilised cloud channel methods. For illustration purposes, the 
 
 The dataset used in this study is based on the [Folsom](https://zenodo.org/records/2826939) dataset. To make the data preparation and follow-up steps easier to reproduce, these steps were described as a directed acyclic graph (DAG) using the DVC package. This pipeline is stored in a [dvc.yaml](./dvc.yaml) file, while data are stored in the [data](./data) directory.
 
-For study reproducibility, Zenodo repository with data splits and pretrained models was created and is available at [...]().
+For study reproducibility, Zenodo repository with data splits and pretrained models was created and is available at [https://zenodo.org/record/15792283](https://zenodo.org/record/15792283).
 
 <details>
 <summary>1. DVC DAG (Directed Acyclic Graph)</summary>
