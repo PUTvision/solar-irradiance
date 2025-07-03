@@ -103,7 +103,7 @@ def evaluate(
 
     inference_provider = PROVIDERS[provider]
 
-    model_name = model_path.split("/")[-1]
+    model_name = model_path.name
     log.info(f"Inference model: {model_name}")
     log.info(f"ONNXRuntime provider: {inference_provider}")
     sess = ort.InferenceSession(model_path, providers=[inference_provider])
