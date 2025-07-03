@@ -1,2 +1,1 @@
-from .folsom_dataset_2D import FolsomForecastingDataset2D
-from .folsom_dataset_3D import FolsomForecastingDataset3D
+from .folsom_dataset import FolsomForecastingDataset

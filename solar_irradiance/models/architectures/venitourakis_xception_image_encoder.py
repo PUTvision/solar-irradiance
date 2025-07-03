@@ -1,7 +1,7 @@
 """
-Venitourakis, G., Vasilakis, C., Tsagkaropoulos, A., Amrou, T., Konstantoulakis, G., Golemis, P., & Reisis, D. (2023). 
-Neural Network-Based Solar Irradiance Forecast for Edge Computing Devices. Information, 14(11), 617. 
-https://doi.org/10.3390/info14110617 
+Venitourakis, G., Vasilakis, C., Tsagkaropoulos, A., Amrou, T., Konstantoulakis, G., Golemis, P., & Reisis, D. (2023).
+Neural Network-Based Solar Irradiance Forecast for Edge Computing Devices. Information, 14(11), 617.
+https://doi.org/10.3390/info14110617
 """
 
 import torch
@@ -10,28 +10,27 @@ import torch.nn as nn
 
 class SeparableConv2d(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, padding):
-        super(SeparableConv2d,self).__init__()
+        super().__init__()
 
         self.depthwise_separable_conv = nn.Sequential(
             nn.Conv2d(in_channels, in_channels, kernel_size=kernel_size, stride=1, padding=padding, groups=in_channels),
             nn.LeakyReLU(negative_slope=0.1125, inplace=True),
             nn.Conv2d(in_channels, out_channels, kernel_size=1),
-            nn.LeakyReLU(negative_slope=0.1125, inplace=True)
+            nn.LeakyReLU(negative_slope=0.1125, inplace=True),
         )
-    
-    def forward(self,x):
+
+    def forward(self, x):
         return self.depthwise_separable_conv(x)
 
 
 class XceptionLayer(nn.Module):
     def __init__(self, in_channels, out_channels):
-        super(XceptionLayer, self).__init__()
+        super().__init__()
         self.depthwise_separable_conv_k3 = SeparableConv2d(in_channels, in_channels, kernel_size=3, padding=1)
         self.depthwise_separable_conv_k5 = SeparableConv2d(in_channels, in_channels, kernel_size=5, padding=2)
         self.maxpool = nn.MaxPool2d(kernel_size=3, padding=1, stride=1)
         self.pointwise_conv = nn.Sequential(
-            nn.Conv2d(in_channels*4, out_channels, kernel_size=1),
-            nn.LeakyReLU(negative_slope=0.1125, inplace=True)
+            nn.Conv2d(in_channels * 4, out_channels, kernel_size=1), nn.LeakyReLU(negative_slope=0.1125, inplace=True)
         )
 
     def forward(self, x):
@@ -44,7 +43,7 @@ class XceptionLayer(nn.Module):
 
 class XceptionImageEncoder(nn.Module):
     def __init__(self, in_channels=3):
-        super(XceptionImageEncoder, self).__init__()
+        super().__init__()
 
         self.entry_flow = nn.Sequential(
             XceptionLayer(in_channels=in_channels, out_channels=64),
@@ -71,7 +70,7 @@ class XceptionImageEncoder(nn.Module):
             nn.MaxPool2d(kernel_size=2, stride=2),
             XceptionLayer(in_channels=128, out_channels=128),
             nn.BatchNorm2d(128),
-            nn.AdaptiveAvgPool2d(output_size=(1, 1))
+            nn.AdaptiveAvgPool2d(output_size=(1, 1)),
         )
 
     def forward(self, x):

@@ -1,10 +1,7 @@
-from typing import Tuple
-
 import cv2
 import numpy as np
 import pandas as pd
 import pvlib
-
 
 # Folsom dataset
 # LATITUDE = 38.642
@@ -15,12 +12,13 @@ import pvlib
 
 class SunMask:
     """Creates sun mask based on camera location and orientation."""
+
     def __init__(
-            self,
-            latitude: float,
-            longitude: float,
-            camera_orientation_compensation: int,
-            focal_length: float,
+        self,
+        latitude: float,
+        longitude: float,
+        camera_orientation_compensation: int,
+        focal_length: float,
     ):
         self._latitude = latitude
         self._longitude = longitude
@@ -51,7 +49,7 @@ class SunMask:
 
         return mask
 
-    def _calculate_sun_center_in_image(self, timestamp: str, image_shape: Tuple[int, int]) -> Tuple[int]:
+    def _calculate_sun_center_in_image(self, timestamp: str, image_shape: tuple[int, int]) -> tuple[int]:
         """Calculates coordinates of sun center in image for provided timestamp.
 
         Parameters
@@ -66,20 +64,18 @@ class SunMask:
             Sun center coordinates in image.
         """
         solarposition = pvlib.solarposition.get_solarposition(
-            time=pd.to_datetime(timestamp, format='%Y%m%d_%H%M%S'),
-            latitude=self._latitude,
-            longitude=self._longitude
+            time=pd.to_datetime(timestamp, format="%Y%m%d_%H%M%S"), latitude=self._latitude, longitude=self._longitude
         )
-        zenith = solarposition['zenith'][0]
-        azimuth = solarposition['azimuth'][0]
+        zenith = solarposition["zenith"][0]
+        azimuth = solarposition["azimuth"][0]
 
         # compensation of camera orientation
         azimuth -= self._camera_orientation_compensation
 
-        R = 2 * self._focal_length * np.tan(np.deg2rad(zenith) / 2)
+        radius = 2 * self._focal_length * np.tan(np.deg2rad(zenith) / 2)
 
-        x_sc = R * np.sin(np.deg2rad(azimuth))
-        y_sc = R * np.cos(np.deg2rad(azimuth))
+        x_sc = radius * np.sin(np.deg2rad(azimuth))
+        y_sc = radius * np.cos(np.deg2rad(azimuth))
 
         # convert to the image plane
         x_scp = image_shape[1] / 2 + x_sc * image_shape[1] / 2

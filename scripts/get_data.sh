@@ -1,6 +1,6 @@
 #!/bin/sh
 
-cd data/Raw
+cd data/raw
 mkdir ./images
 
 # download irradiance measurements

@@ -1,53 +1,53 @@
 from pathlib import Path
-from typing import Tuple, List, Dict, Any, Union
+from typing import Any
 
+from albumentations import ReplayCompose
 import cv2
 import numpy as np
 import pandas as pd
+from PIL import Image
 import pytz
 import torch
-from PIL import Image
-from albumentations import ReplayCompose
 from torch.utils.data import Dataset
 
-from solar_irradiance.datamodules.sun_mask import SunMask
 from solar_irradiance.datamodules.cloud_mask import CloudMask
+from solar_irradiance.datamodules.sun_mask import SunMask
 
-MAX_IRRADIANCE = 1466.0     # max irradiance in the dataset
+MAX_IRRADIANCE = 1466.0  # max irradiance in the dataset
 # MAX_IRRADIANCE = 1600.0     # max irradiance from Hukseflux pyranometer
 
 
 OPTICAL_FLOWS = {
-    'dis': cv2.DISOpticalFlow_create(preset=cv2.DISOPTICAL_FLOW_PRESET_ULTRAFAST),
-    'farneback': cv2.optflow.createOptFlow_Farneback(),
-    'deep_flow': cv2.optflow.createOptFlow_DeepFlow(),
-    'pca_flow': cv2.optflow.createOptFlow_PCAFlow(),
-    'dual_tvl1': cv2.optflow.createOptFlow_DualTVL1(),
-    'dense_rlof': cv2.optflow.createOptFlow_DenseRLOF(),    # requires RGB input
+    "dis": cv2.DISOpticalFlow_create(preset=cv2.DISOPTICAL_FLOW_PRESET_ULTRAFAST),
+    "farneback": cv2.optflow.createOptFlow_Farneback(),
+    "deep_flow": cv2.optflow.createOptFlow_DeepFlow(),
+    "pca_flow": cv2.optflow.createOptFlow_PCAFlow(),
+    "dual_tvl1": cv2.optflow.createOptFlow_DualTVL1(),
+    "dense_rlof": cv2.optflow.createOptFlow_DenseRLOF(),  # requires RGB input
 }
 
 
-class FolsomForecastingDataset2D(Dataset):
-    latitude = 38.642,
+class FolsomForecastingDataset(Dataset):
+    latitude = 38.642
     longitude = -121.148
     camera_orientation_compensation = 165
     focal_length = 0.48
 
-    us_pacific = pytz.timezone('US/Pacific')
+    us_pacific = pytz.timezone("US/Pacific")
     utc = pytz.utc
 
     def __init__(
-            self,
-            data_root: Path,
-            periods: List[Dict[str, Any]],
-            transforms: ReplayCompose,
-            add_sun_mask: bool,
-            add_irradiance_channel: bool,
-            optical_flow: Union[None, str],
-            cloud_mask_method: Union[None, str],
-            image_size: Tuple[int],
-            image_mean: Tuple[float],
-            image_std: Tuple[float],
+        self,
+        data_root: Path,
+        periods: list[dict[str, Any]],
+        transforms: ReplayCompose,
+        add_sun_mask: bool,
+        add_irradiance_channel: bool,
+        optical_flow: None | str,
+        cloud_mask_method: None | str,
+        image_size: tuple[int],
+        image_mean: tuple[float],
+        image_std: tuple[float],
     ):
         self._data_root = data_root
         self._periods = periods
@@ -73,7 +73,7 @@ class FolsomForecastingDataset2D(Dataset):
         if self._cloud_mask_method is not None:
             self._cloud_mask = CloudMask(shape=self._image_size, method=cloud_mask_method)
 
-    def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    def __getitem__(self, index: int) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         period = self._periods[index]
 
         source_images = []
@@ -82,29 +82,29 @@ class FolsomForecastingDataset2D(Dataset):
         flow = None
         prev_image = None
 
-        for history_idx, history_item in enumerate(period['history']):
-            image_path = self._data_root / 'images' / history_item['image_name']
-            irradiance = history_item['irradiance'] #/ MAX_IRRADIANCE
+        for history_item in period["history"]:
+            image_path = self._data_root / "images" / history_item["image_name"]
+            irradiance = history_item["irradiance"]  # / MAX_IRRADIANCE
             image = np.asarray(Image.open(image_path))
 
             if replay_data is None:
                 transformed = self._transforms(image=image)
-                replay_data = transformed['replay']
+                replay_data = transformed["replay"]
             else:
                 transformed = self._transforms.replay(replay_data, image=image)
 
-            image = transformed['image']
-            norm_image = (image / 255. - self._image_mean) / self._image_std
-            cropped_image = np.where(self._crop_mask, norm_image, 0.).astype(np.float32)
+            image = transformed["image"]
+            norm_image = (image / 255.0 - self._image_mean) / self._image_std
+            cropped_image = np.where(self._crop_mask, norm_image, 0.0).astype(np.float32)
             torch_image = torch.from_numpy(cropped_image).permute(2, 0, 1)
 
             if self._add_sun_mask:
-                date = pd.to_datetime(image_path.name[:15], format='%Y%m%d_%H%M%S')
+                date = pd.to_datetime(image_path.name[:15], format="%Y%m%d_%H%M%S")
                 us_pacific_date = self.us_pacific.localize(date)
-                utc_date = us_pacific_date.astimezone(self.utc).strftime('%Y%m%d_%H%M%S')
+                utc_date = us_pacific_date.astimezone(self.utc).strftime("%Y%m%d_%H%M%S")
 
                 sun_mask = self._sun_mask(image_shape=image.shape, timestamp=utc_date)
-                sun_mask = self._transforms.replay(replay_data, image=sun_mask)['image']
+                sun_mask = self._transforms.replay(replay_data, image=sun_mask)["image"]
                 torch_image = torch.cat([torch_image, torch.from_numpy(sun_mask).permute(2, 0, 1)], dim=0)
 
             if self._add_irradiance_channel:
@@ -118,10 +118,7 @@ class FolsomForecastingDataset2D(Dataset):
                 torch_image = torch.cat([torch_image, torch.from_numpy(cloud_mask).permute(2, 0, 1)], dim=0)
 
             if self._optical_flow is not None:
-                if self._optical_flow == 'dense_rlof':
-                    image_for_flow = image
-                else:
-                    image_for_flow = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+                image_for_flow = image if self._optical_flow == "dense_rlof" else cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
 
                 if prev_image is None:
                     prev_image = image_for_flow.copy()
@@ -133,15 +130,11 @@ class FolsomForecastingDataset2D(Dataset):
             source_images.append(torch_image)
             source_irradiances.append(irradiance)
 
-        target_irradiance = period['target_irradiance'] #/ MAX_IRRADIANCE
+        target_irradiance = period["target_irradiance"]  # / MAX_IRRADIANCE
 
         image_input = source_images[-1]
 
-        return (
-            image_input,
-            torch.Tensor(source_irradiances),
-            torch.Tensor([target_irradiance])
-        )
+        return (image_input, torch.Tensor(source_irradiances), torch.Tensor([target_irradiance]))
 
     def __len__(self) -> int:
         return len(self._periods)

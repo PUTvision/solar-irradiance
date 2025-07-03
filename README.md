@@ -1,47 +1,121 @@
-# Solar Irradiance Forecasting
+# Bag of tricks for irradiance forecasting
 
 
 ## **Overview**
-> PyTorch repository for solar irradiance forecasting task with DVC, PyTorch, Lightning, and Neptune included.
+> Bag of tricks for ground-based solar irradiance forecasting using sky images.
 
 
 ## Table of Contents
 * [Requirements](#requirements)
-* [Data](#data)
-* [Project Structure](#project-structure)
+* [Sky image enhancement methods](#sky-image-enhancement-methods)
+* [Dataset](#dataset)
 * [Usage](#usage)
 
 ## Requirements
 
-* Python *3.10.0*
-* Python packages from the *[requirements.txt](./requirements.txt)* file
+* Python *3.12.6*
+* Python packages defined in the *[pyproject.toml](./pyproject.toml)* file
 
-## Data
+```bash
+pip install -e .[dev]
+```
+
+## Sky image enhancement methods
+
+<details>
+<summary>1. Sun mask</summary>
+
+</details>
+
+<details>
+<summary>2. Irradiance channel</summary>
+
+</details>
+
+<details>
+<summary>3. Optical flow</summary>
+
+</details>
+
+<details>
+<summary>4. Cloud channel</summary>
+
+</details>
+
+
+## Dataset
 
 <div align="center">
 
 |           **Task**          |                        **Dataset**                       |             **Samples**             | **Used** |
 |:---------------------------:|:--------------------------------------------------------:|:-----------------------------------:|:--------:|
 | Solar Irradiance Regression |        [Folsom](https://zenodo.org/record/2826939)       |   3 years  (sampled every minute)   |     *    |
-| Solar Irradiance Regression |       [SIRTA](https://sirta.ipsl.fr/data-overview/)      | 8 years  (sampled every two minute) |          |
-| Solar Irradiance Regression | [Girasol](https://datadryad.org/stash/dataset/doi%253A10.5061%252Fdryad.zcrjdfn9m) | 244 individual days from 3 years period | |
-|      Cloud Segmentation     | [SWINySEG](http://vintage.winklerbros.net/swinyseg.html) |                 6768                |          |
-|      Cloud Segmentation     |        [HYTA](https://github.com/Soumyabrata/HYTA)       |                  32                 |          |
 
 </div>
 
 The data is stored in the [data](./data) directory. Preprocess steps are tracked by DVC and described in [dvc.yaml](./dvc.yaml)
 
-### Data Structure
+<details>
+<summary>1. DVC DAG (Directed Acyclic Graph)</summary>
 
-- **Raw** - irradiance CSV and sky images extracted directly from files downloaded from [Folsom](https://zenodo.org/record/2826939) dataset
-- **Prepared** - processed data (filtered, timestamp moved to local timezone, grouped in periods)
-- **Eval** - small subset extracted for evaluation purposes
+```console
+                                         +----------+
+                                        *| get_data |**
+                                   ***** +----------+  ******
+                             ******                          *****
+                        *****                                     *****
+                     ***                                               ******
+     +--------------------+                                                  ***
+     | convert_timestamps |*****                                               *
+     +--------------------+     ***********                                    *
+       ***             ***                 ***********                         *
+    ***                   ***                         ***********              *
+  **                         **                                  ******        *
+**                             **                                    +-----------------+
+*                               *                                    | clean_dataframe |
+*                               *                                    +-----------------+
+*                               *                                     ***            ***
+*                               *                                   **                  ***
+*                               *                                 **                       **
+***                             ***                   +----------------+                    ***
+   *****                           *****              | export_periods |               *****
+        *****                           ******    ****+----------------+          *****
+             *****                           ******            *             *****
+                  *****                ******      *****        *       *****
+                       ***          ***                 ***     *    ***
+                   +---------------------+            +------------------+
+                   | export_eval_periods |            | train_forecaster |
+                   +---------------------+            +------------------+
+```
+
+</details>
+
+<details>
+<summary>2. Data structure</summary>
+
+```console
+data/
+├── raw
+├── prepared
+└── eval
+```
+
+- **raw** - raw irradiance CSV and sky images extracted directly from files downloaded from Folsom [Zenodo](https://zenodo.org/record/2826939) page
+- **prepared** - processed data (filtered, timestamp moved to local timezone, corrupted images removed, and grouped into periods)
+- **eval** - small subset extracted for evaluation purposes
+
+</details>
 
 ## Usage
 
-* train
+1. **Train**
 
 ```shell
-python -m scripts.train_forecaster --data-root data/Prepared
+python -m scripts.train_forecaster --data-root data/prepared --periods-filename periods.pickle
 ```
+
+2. **Test**
+
+Change `test_only: True` and provide path to checkpoint `restore_from_ckpt: path/to/checkpoint`. Then call train script.
+
+3. **Evaluate**

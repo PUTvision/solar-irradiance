@@ -1,14 +1,14 @@
 vars:
-  - data_raw: data/Raw
-  - data_prepared: data/Prepared
-  - data_eval: data/Eval
+  - data_raw: data/raw
+  - data_prepared: data/prepared
+  - data_eval: data/eval
 
 stages:
   get_data:
     cmd: bash scripts/get_data.sh
     outs:
-      - data/Raw/Folsom_irradiance.csv
-      - data/Raw/images/:
+      - data/raw/Folsom_irradiance.csv
+      - data/raw/images/:
           cache: false
 
   convert_timestamps:
