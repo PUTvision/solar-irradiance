@@ -30,10 +30,6 @@ MAX_IRRADIANCE = 1466.0  # max irradiance in the dataset
 OPTICAL_FLOWS = {
     "dis": cv2.DISOpticalFlow_create(preset=cv2.DISOPTICAL_FLOW_PRESET_FAST),
     "farneback": cv2.optflow.createOptFlow_Farneback(),
-    "deep_flow": cv2.optflow.createOptFlow_DeepFlow(),
-    "pca_flow": cv2.optflow.createOptFlow_PCAFlow(),
-    "dual_tvl1": cv2.optflow.createOptFlow_DualTVL1(),
-    "dense_rlof": cv2.optflow.createOptFlow_DenseRLOF(),  # requires RGB input
 }
 
 PROVIDERS = {
@@ -68,7 +64,6 @@ def preprocess(img_data: np.ndarray) -> np.ndarray:
 @click.option(
     "--provider", help="Inference provider", type=click.Choice(["cpu", "openvino", "cuda", "tensorrt"]), default="cpu"
 )
-@click.option("--dims", help="Model dimensions: 3 for 3D, 2 for 2D models", type=int, default=2)
 @click.option("--add-sun-mask", help="Add sun mask to input data", is_flag=True)
 @click.option("--add-irradiance-channel", help="Add irradiance channel to input data", is_flag=True)
 @click.option(
@@ -77,12 +72,7 @@ def preprocess(img_data: np.ndarray) -> np.ndarray:
     type=click.Choice(["red_blue_ratio", "red_blue_difference", "normalized_blue_red_ratio"]),
     default=None,
 )
-@click.option(
-    "--optical-flow",
-    help="Add optical flow to input data",
-    type=click.Choice(["dis", "farneback", "deep_flow", "pca_flow", "dual_tvl1", "dense_rlof"]),
-    default=None,
-)
+@click.option("--optical-flow", help="Add optical flow to input data", type=click.Choice(["dis", "farneback"]), default=None)
 @click.option(
     "--eval-periods-path",
     help="Data frame with evaluation periods",
@@ -97,7 +87,6 @@ def preprocess(img_data: np.ndarray) -> np.ndarray:
 )
 def evaluate(
     model_path: Path,
-    dims: int,
     provider: str,
     add_sun_mask: bool,
     add_irradiance_channel: bool,
@@ -203,7 +192,7 @@ def evaluate(
 
             if optical_flow is not None:
                 of_time_start = time.time()
-                image = cv2.cvtColor(source_image, cv2.COLOR_RGB2GRAY) if optical_flow != "dense_rlof" else source_image
+                image = cv2.cvtColor(source_image, cv2.COLOR_RGB2GRAY)
                 if prev_image is None:
                     prev_image = image.copy()
                 flow = of.calc(prev_image, image, flow)
@@ -216,11 +205,7 @@ def evaluate(
 
         target_irradiance = p["target_irradiance"]  # / MAX_IRRADIANCE
 
-        image_input = (
-            np.expand_dims(np.transpose(source_images, (1, 0, 2, 3)), axis=0).astype(np.float32)
-            if dims == 3
-            else np.array(source_images[-1:], dtype=np.float32)
-        )
+        image_input = np.array(source_images[-1:], dtype=np.float32)
 
         inference_start = time.time()
         output = sess.run(

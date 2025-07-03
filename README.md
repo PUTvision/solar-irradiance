@@ -4,12 +4,16 @@
 ## **Overview**
 > Bag of tricks for ground-based solar irradiance forecasting using sky images.
 
+<p align="center">
+     <img src=".images/algorithm.png">
+</p>
 
 ## Table of Contents
 * [Requirements](#requirements)
 * [Sky image enhancement methods](#sky-image-enhancement-methods)
 * [Dataset](#dataset)
 * [Usage](#usage)
+* [Results](#results)
 
 ## Requirements
 
@@ -25,38 +29,62 @@ pip install -e .[dev]
 <details>
 <summary>1. Sun mask</summary>
 
+<p align="center">
+     <img src=".images/sun_mask.png">
+</p>
+
 </details>
 
 <details>
-<summary>2. Irradiance channel</summary>
+<summary>2. Irradiance channel (with Sun mask)</summary>
+
+<p align="center">
+     <img src=".images/irradiance_channel_with_sun_mask.png">
+</p>
 
 </details>
 
 <details>
 <summary>3. Optical flow</summary>
 
+<p align="center">
+     <img src=".images/optical_flow.png">
+</p>
+
+<p align="center">
+Optical flow data generated using DIS method, with ultrafast preset, to enhance the input image at time t as additional channels. (a) history image (at time t − 15); (b) optical flow in the X-axis generated between an input image and previous images (at t − 15, t − 10, t − 5);
+(c) optical flow in the Y-axis generated between an input image and previous images (at t − 15, t − 10, t − 5); (d) input image (at time t). Red and blue colours represent the direction of pixel displacement, respectively positive and negative, between the initial and the final frame in the x and y directions. Colour saturation stands for shift magnitude.
+</p>
+
 </details>
 
 <details>
 <summary>4. Cloud channel</summary>
+
+<p align="center">
+     <img src=".images/cloud_mask.png">
+</p>
+
+<p align="center">
+Visualisation of utilised cloud channel methods. For illustration purposes, the output masks were thresholded with hand-picked values to produce binary masks. (a) input image; (b) red-blue ratio (R2B); (c) red-blue difference (R-B); (d) normalised blue-red ratio (Norm. B/R).
+</p>
 
 </details>
 
 
 ## Dataset
 
-<div align="center">
+The dataset used in this study is based on the [Folsom](https://zenodo.org/records/2826939) dataset. To make the data preparation and follow-up steps easier to reproduce, these steps were described as a directed acyclic graph (DAG) using the DVC package. This pipeline is stored in a [dvc.yaml](./dvc.yaml) file, while data are stored in the [data](./data) directory.
 
-|           **Task**          |                        **Dataset**                       |             **Samples**             | **Used** |
-|:---------------------------:|:--------------------------------------------------------:|:-----------------------------------:|:--------:|
-| Solar Irradiance Regression |        [Folsom](https://zenodo.org/record/2826939)       |   3 years  (sampled every minute)   |     *    |
-
-</div>
-
-The data is stored in the [data](./data) directory. Preprocess steps are tracked by DVC and described in [dvc.yaml](./dvc.yaml)
+For study reproducibility, Zenodo repository with data splits and pretrained models was created and is available at [...]().
 
 <details>
 <summary>1. DVC DAG (Directed Acyclic Graph)</summary>
+
+```bash
+dvc dag
+```
+
 
 ```console
                                          +----------+
@@ -119,3 +147,23 @@ python -m scripts.train_forecaster --data-root data/prepared --periods-filename 
 Change `test_only: True` and provide path to checkpoint `restore_from_ckpt: path/to/checkpoint`. Then call train script.
 
 3. **Evaluate**
+
+Firstly export PyTorch checkpoint to ONNX format, for example using test procedure with `export_to_onnx: True`.
+
+```bash
+python -m scripts.evaluate \
+     --model-path /path/to/model \
+     --dataset-path data/eval/images \
+     --eval-periods-path data/eval/eval_periods.pickle \
+     --provider cpu \
+     --add-sun-mask \
+     --add-irradiance-channel \
+     --cloud-mask-method normalized_blue_red_ratio \
+     --optical-flow dis
+```
+
+## Results
+
+<p align="center">
+     <img src=".images/model_comparison.png">
+</p>

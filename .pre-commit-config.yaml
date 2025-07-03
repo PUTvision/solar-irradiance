@@ -21,6 +21,7 @@ repos:
       - id: check-toml
       - id: check-json
       - id: check-added-large-files
+        args: ['--maxkb=2500']
       - id: check-merge-conflict
       - id: debug-statements
       - id: mixed-line-ending
