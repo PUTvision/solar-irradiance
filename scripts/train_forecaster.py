@@ -10,7 +10,6 @@ from lightning.pytorch.loggers import NeptuneLogger
 from lightning.pytorch.strategies import DDPStrategy
 from omegaconf import OmegaConf
 import onnx
-from onnxsim import simplify
 import torch
 from torch.distributed.algorithms.ddp_comm_hooks import default_hooks as default
 
@@ -23,12 +22,7 @@ log = utils.get_logger(__name__)
 
 @click.command()
 @click.option("--data-root", type=click.Path(exists=True, path_type=Path), required=True)
-@click.option(
-    "--periods-filename",
-    help="Filename with periods in pickle format",
-    type=click.Path(exists=True, file_okay=True, path_type=Path),
-    default="periods.pickle",
-)
+@click.option("--periods-filename", help="Periods split filename in pickle format", type=str, default="periods.pickle")
 def train_forecaster(data_root: Path, periods_filename: str):
     load_dotenv(find_dotenv(".env"))
 
@@ -157,6 +151,8 @@ def train_forecaster(data_root: Path, periods_filename: str):
         )
 
         if use_simplifier:
+            from onnxsim import simplify
+
             model = onnx.load("model.onnx")
             model_simp, check = simplify(model)
             assert check, "Simplified ONNX model could not be validated"
