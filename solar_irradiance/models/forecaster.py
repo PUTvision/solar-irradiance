@@ -40,13 +40,7 @@ class Forecaster(pl.LightningModule):
             )
             self.num_features = self.network.classifier.in_features
             self.network.classifier = torch.nn.Identity()
-        elif (
-            "mambaout" in model_name
-            or "convnext" in model_name
-            or "convformer" in model_name
-            or "mvitv2" in model_name
-            or "regnet" in model_name
-        ):
+        elif "mambaout" in model_name or "convnext" in model_name or "convformer" in model_name or "regnet" in model_name:
             self.network = timm.create_model(
                 model_name,
                 pretrained=pretrained,
