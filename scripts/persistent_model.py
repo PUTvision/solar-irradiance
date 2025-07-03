@@ -11,7 +11,7 @@ MAX_IRRADIANCE = 1466.0  # max irradiance in the dataset
 
 @click.command()
 @click.option(
-    "--periods_path",
+    "--periods-path",
     help="Data frame with evaluation periods",
     type=click.Path(exists=True, file_okay=True, path_type=Path),
     default="data/prepared/periods.pickle",

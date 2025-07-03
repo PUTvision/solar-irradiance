@@ -23,7 +23,13 @@ log = utils.get_logger(__name__)
 
 @click.command()
 @click.option("--data-root", type=click.Path(exists=True, path_type=Path), required=True)
-def train_forecaster(data_root: Path):
+@click.option(
+    "--periods-filename",
+    help="Filename with periods in pickle format",
+    type=click.Path(exists=True, file_okay=True, path_type=Path),
+    default="periods.pickle",
+)
+def train_forecaster(data_root: Path, periods_filename: str):
     load_dotenv(find_dotenv(".env"))
 
     cfg = OmegaConf.create(dvc.api.params_show()["train_forecaster"])
@@ -32,7 +38,7 @@ def train_forecaster(data_root: Path):
 
     datamodule = ForecastingDataModule(
         root_data_path=data_root,
-        periods_path=data_root / "periods.pickle",
+        periods_path=data_root / periods_filename,
         augment=cfg.datamodule.augment,
         train_val_set_size=cfg.datamodule.train_val_set_size,
         image_size=cfg.datamodule.image_size,

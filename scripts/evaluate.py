@@ -64,33 +64,33 @@ def preprocess(img_data: np.ndarray) -> np.ndarray:
 
 
 @click.command()
-@click.option("--model_path", help="ONNX model path", type=click.Path(exists=True, file_okay=True, path_type=Path))
+@click.option("--model-path", help="ONNX model path", type=click.Path(exists=True, file_okay=True, path_type=Path))
 @click.option(
     "--provider", help="Inference provider", type=click.Choice(["cpu", "openvino", "cuda", "tensorrt"]), default="cpu"
 )
 @click.option("--dims", help="Model dimensions: 3 for 3D, 2 for 2D models", type=int, default=2)
-@click.option("--add_sun_mask", help="Add sun mask to input data", is_flag=True)
-@click.option("--add_irradiance_channel", help="Add irradiance channel to input data", is_flag=True)
+@click.option("--add-sun-mask", help="Add sun mask to input data", is_flag=True)
+@click.option("--add-irradiance-channel", help="Add irradiance channel to input data", is_flag=True)
 @click.option(
-    "--cloud_mask_method",
+    "--cloud-mask-method",
     help="Cloud segmentation method",
     type=click.Choice(["red_blue_ratio", "red_blue_difference", "normalized_blue_red_ratio"]),
     default=None,
 )
 @click.option(
-    "--optical_flow",
+    "--optical-flow",
     help="Add optical flow to input data",
     type=click.Choice(["dis", "farneback", "deep_flow", "pca_flow", "dual_tvl1", "dense_rlof"]),
     default=None,
 )
 @click.option(
-    "--eval_periods_path",
+    "--eval-periods-path",
     help="Data frame with evaluation periods",
     type=click.Path(exists=True, file_okay=True, path_type=Path),
     default="data/eval/eval_periods.pickle",
 )
 @click.option(
-    "--dataset_path",
+    "--dataset-path",
     help="Path to dataset image directory",
     type=click.Path(exists=True, dir_okay=True, path_type=Path),
     default="data/eval/images",

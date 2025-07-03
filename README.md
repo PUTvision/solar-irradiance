@@ -111,7 +111,7 @@ data/
 1. **Train**
 
 ```shell
-python -m scripts.train_forecaster --data-root data/prepared
+python -m scripts.train_forecaster --data-root data/prepared --periods-filename periods.pickle
 ```
 
 2. **Test**
