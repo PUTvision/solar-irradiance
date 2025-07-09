@@ -168,6 +168,16 @@ python -m scripts.evaluate \
 
 ## Results
 
+### Image encoder comparison
+
 <p align="center">
      <img src=".images/model_comparison.png">
+</p>
+
+### Qualitative comparison
+
+<p align="center">
+     <img src=".images/qualitative_comparison_02_04_2014.png">
+     <img src=".images/qualitative_comparison_21_06_2014.png">
+     <img src=".images/qualitative_comparison_04_08_2014.png">
 </p>
