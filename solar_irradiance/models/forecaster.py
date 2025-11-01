@@ -72,13 +72,21 @@ class Forecaster(pl.LightningModule):
 
             self.network = XceptionImageEncoder(in_channels=input_channels)
             self.num_features = 128
+        elif model_name == "ansong_kalisi_cnn_lstm":
+            from solar_irradiance.models.architectures.ansong_kalisi_cnn_lstm import KALiSI
 
-        self.num_features += 4  # Add 4 historical irradiances
-        self.network_head = torch.nn.Sequential(
-            torch.nn.Linear(self.num_features, 256),
-            torch.nn.ReLU(inplace=False),
-            torch.nn.Linear(256, 1),
-        )
+            image_input_dim = (3, 128, 128)
+            numeric_input_dim = 4
+            self.network = KALiSI(image_input_dim, numeric_input_dim)
+        elif model_name == "hendrikx_lstm":
+            pass
+
+        # self.num_features += 4  # Add 4 historical irradiances
+        # self.network_head = torch.nn.Sequential(
+        #     torch.nn.Linear(self.num_features, 256),
+        #     torch.nn.ReLU(inplace=False),
+        #     torch.nn.Linear(256, 1),
+        # )
 
         if loss_function == "MSE":
             self.loss = torch.nn.MSELoss()
@@ -113,8 +121,9 @@ class Forecaster(pl.LightningModule):
         optimizer.zero_grad(set_to_none=True)
 
     def forward(self, x: torch.Tensor, irradiance_history: torch.Tensor) -> torch.Tensor:
-        x = self.network(x)
-        x = self.network_head(torch.cat([x, irradiance_history], dim=1))
+        # x = self.network(x)
+        # x = self.network_head(torch.cat([x, irradiance_history], dim=1))
+        x = self.network(x, irradiance_history)
         return x
 
     def training_step(self, batch: torch.Tensor, batch_idx: int) -> torch.Tensor | None:
