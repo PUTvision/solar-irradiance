@@ -77,16 +77,11 @@ class Forecaster(pl.LightningModule):
                 "deit_tiny_patch16_224",
                 pretrained=pretrained,
                 num_classes=1,
-                num_targets=1,
-                use_first_embedding=True,
-                loop_over_timesteps=True,
-                num_lin_layers=1,
-                intermediate_linear_layer_shape=512,
-                dropout_lin_layer=0.1,
-                add_sigmoid=False,
-                linear_activation_func_vit="SiLU",
                 in_chans=input_channels,
+                img_size=128,
             )
+            self.num_features = self.network.head.in_features
+            self.network.head = torch.nn.Identity()
         elif model_name == "ansong_kalisi_cnn_lstm":
             from solar_irradiance.models.architectures.ansong_kalisi_cnn_lstm import KALiSI
 
@@ -134,9 +129,9 @@ class Forecaster(pl.LightningModule):
         optimizer.zero_grad(set_to_none=True)
 
     def forward(self, x: torch.Tensor, irradiance_history: torch.Tensor) -> torch.Tensor:
-        # x = self.network(x)
-        # x = self.network_head(torch.cat([x, irradiance_history], dim=1))
-        x = self.network(x, irradiance_history)
+        x = self.network(x)
+        x = self.network_head(torch.cat([x, irradiance_history], dim=1))
+        # x = self.network(x, irradiance_history)
         return x
 
     def training_step(self, batch: torch.Tensor, batch_idx: int) -> torch.Tensor | None:
