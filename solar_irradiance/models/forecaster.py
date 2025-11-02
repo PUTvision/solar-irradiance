@@ -72,21 +72,34 @@ class Forecaster(pl.LightningModule):
 
             self.network = XceptionImageEncoder(in_channels=input_channels)
             self.num_features = 128
+        elif model_name == "mercier_vit":
+            self.network = timm.create_model(
+                "deit_tiny_patch16_224",
+                pretrained=pretrained,
+                num_classes=1,
+                num_targets=1,
+                use_first_embedding=True,
+                loop_over_timesteps=True,
+                num_lin_layers=1,
+                intermediate_linear_layer_shape=512,
+                dropout_lin_layer=0.1,
+                add_sigmoid=False,
+                linear_activation_func_vit="SiLU",
+                in_chans=input_channels,
+            )
         elif model_name == "ansong_kalisi_cnn_lstm":
             from solar_irradiance.models.architectures.ansong_kalisi_cnn_lstm import KALiSI
 
-            image_input_dim = (3, 128, 128)
+            image_input_dim = (input_channels, 128, 128)
             numeric_input_dim = 4
             self.network = KALiSI(image_input_dim, numeric_input_dim)
-        elif model_name == "hendrikx_lstm":
-            pass
 
-        # self.num_features += 4  # Add 4 historical irradiances
-        # self.network_head = torch.nn.Sequential(
-        #     torch.nn.Linear(self.num_features, 256),
-        #     torch.nn.ReLU(inplace=False),
-        #     torch.nn.Linear(256, 1),
-        # )
+        self.num_features += 4  # Add 4 historical irradiances
+        self.network_head = torch.nn.Sequential(
+            torch.nn.Linear(self.num_features, 256),
+            torch.nn.ReLU(inplace=False),
+            torch.nn.Linear(256, 1),
+        )
 
         if loss_function == "MSE":
             self.loss = torch.nn.MSELoss()
