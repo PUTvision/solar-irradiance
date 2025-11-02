@@ -73,15 +73,24 @@ class Forecaster(pl.LightningModule):
             self.network = XceptionImageEncoder(in_channels=input_channels)
             self.num_features = 128
         elif model_name == "mercier_vit":
-            self.network = timm.create_model(
+            from solar_irradiance.models.architectures.mercier_vit import MercierViT
+
+            network_encoder = timm.create_model(
                 "deit_tiny_patch16_224",
+                num_classes=0,  # remove classifier nn.Linear
                 pretrained=pretrained,
-                num_classes=1,
                 in_chans=input_channels,
                 img_size=128,
             )
-            self.num_features = self.network.head.in_features
-            self.network.head = torch.nn.Identity()
+            self.network = MercierViT(
+                inmodel=network_encoder,
+                number_of_linear_layers=1,
+                drop_out_lin=0.1,
+                intermediate_linear_layer_shape=512,
+                linear_activation_func="SiLU",
+                sigmoid_on=False,
+                y_shape=(1,),
+            )
         elif model_name == "ansong_kalisi_cnn_lstm":
             from solar_irradiance.models.architectures.ansong_kalisi_cnn_lstm import KALiSI
 
