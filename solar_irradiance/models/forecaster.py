@@ -91,6 +91,13 @@ class Forecaster(pl.LightningModule):
                 sigmoid_on=False,
                 y_shape=(1,),
             )
+        elif model_name == "jonathan_attention_cnn":
+            from solar_irradiance.models.architectures.jonathan_attention_cnn import AttentionCNN
+
+            self.network = AttentionCNN(
+                in_channels=input_channels,
+                num_classes=1,  # feature dimension before head
+            )
         elif model_name == "ansong_kalisi_cnn_lstm":
             from solar_irradiance.models.architectures.ansong_kalisi_cnn_lstm import KALiSI
 
