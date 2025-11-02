@@ -24,7 +24,7 @@ class KALiSI(nn.Module):
         lstm_units=32,
         dense_size=1024,
         drop_rate=0.4,
-    ):
+    ) -> None:
         super().__init__()
 
         # Store input dims for helper function
@@ -41,18 +41,20 @@ class KALiSI(nn.Module):
         self.bn2 = nn.BatchNorm2d(num_filters * 2)
         self.pool2 = nn.MaxPool2d(kernel_size=pool_size, stride=strides)
 
+        # --- Adaptive Pooling Layer ---
+        # Guarantees the output spatial dimension is (16, 16)
+        # This size is chosen to match the stable 64x64 input's output
+        self.adaptive_pool = nn.AdaptiveMaxPool2d((16, 16))
+
         # --- Calculate flattened CNN output size ---
+        # This will now be constant: 16 * 16 * (num_filters * 2)
         self.cnn_output_size = self._get_conv_output_dim()
 
         # --- Combined Branch ---
         self.combined_features_dim = self.cnn_output_size + numeric_input_dim
 
-        # --- Optional: Reduce dimensions before LSTM ---
-        self.fc_reduce = nn.Linear(self.combined_features_dim, 512)
-        self.bn_reduce = nn.BatchNorm1d(512)
-
         # --- LSTM Layer ---
-        self.lstm = nn.LSTM(input_size=512, hidden_size=lstm_units, batch_first=True)
+        self.lstm = nn.LSTM(input_size=self.combined_features_dim, hidden_size=lstm_units, batch_first=True)
 
         # --- Fully Connected (Dense) Layers ---
         self.fc1 = nn.Linear(lstm_units, dense_size)
@@ -68,6 +70,10 @@ class KALiSI(nn.Module):
             dummy_input = torch.zeros(1, *self._image_input_dim)
             x = self.pool1(F.relu(self.bn1(self.conv1(dummy_input))))
             x = self.pool2(F.relu(self.bn2(self.conv2(x))))
+
+            # Apply adaptive pooling in the dummy pass as well
+            x = self.adaptive_pool(x)
+
             flat_size = x.flatten(start_dim=1).shape[1]
         return flat_size
 
@@ -78,23 +84,24 @@ class KALiSI(nn.Module):
         x = F.relu(self.bn2(self.conv2(x)))
         x = self.pool2(x)
 
+        # --- Apply Adaptive Pooling ---
+        # This ensures the spatial dimension is fixed, e.g., (Batch, 48, 16, 16)
+        x = self.adaptive_pool(x)
+
         # --- Flatten ---
+        # Shape: (Batch, 16 * 16 * 48) = (Batch, 12288)
         x_cnn_flat = torch.flatten(x, start_dim=1)
 
         # --- Concatenate ---
+        # Shape: (Batch, 12288 + numeric_input_dim)
         x_combined = torch.cat((x_cnn_flat, x_numeric), dim=1)
-
-        # --- Reduce dimensions ---
-        x_reduced = F.relu(self.bn_reduce(self.fc_reduce(x_combined)))
 
         # --- Prepare for LSTM ---
         # Add sequence dimension (Seq_Len=1)
-        # Shape becomes: (Batch, 1, 512)
-        x_seq = x_reduced.unsqueeze(1)
+        # Shape: (Batch, 1, 12288 + numeric_input_dim)
+        x_seq = x_combined.unsqueeze(1)
 
         # --- LSTM ---
-        # lstm_out shape: (Batch, Seq_Len, hidden_size)
-        # h_n shape: (num_layers, Batch, hidden_size)
         lstm_out, (h_n, c_n) = self.lstm(x_seq)
 
         # Get the hidden state from the last layer
