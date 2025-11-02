@@ -21,7 +21,7 @@ class KALiSI(nn.Module):
         kernel_size=(3, 3),
         pool_size=(2, 2),
         strides=2,
-        lstm_units=None,
+        lstm_units=32,
         dense_size=1024,
         drop_rate=0.4,
     ):
@@ -47,8 +47,12 @@ class KALiSI(nn.Module):
         # --- Combined Branch ---
         self.combined_features_dim = self.cnn_output_size + numeric_input_dim
 
+        # --- Optional: Reduce dimensions before LSTM ---
+        self.fc_reduce = nn.Linear(self.combined_features_dim, 512)
+        self.bn_reduce = nn.BatchNorm1d(512)
+
         # --- LSTM Layer ---
-        self.lstm = nn.LSTM(input_size=self.combined_features_dim, hidden_size=lstm_units, batch_first=True)
+        self.lstm = nn.LSTM(input_size=512, hidden_size=lstm_units, batch_first=True)
 
         # --- Fully Connected (Dense) Layers ---
         self.fc1 = nn.Linear(lstm_units, dense_size)
@@ -80,10 +84,13 @@ class KALiSI(nn.Module):
         # --- Concatenate ---
         x_combined = torch.cat((x_cnn_flat, x_numeric), dim=1)
 
+        # --- Reduce dimensions ---
+        x_reduced = F.relu(self.bn_reduce(self.fc_reduce(x_combined)))
+
         # --- Prepare for LSTM ---
         # Add sequence dimension (Seq_Len=1)
-        # Shape becomes: (Batch, 1, combined_features_dim)
-        x_seq = x_combined.unsqueeze(1)
+        # Shape becomes: (Batch, 1, 512)
+        x_seq = x_reduced.unsqueeze(1)
 
         # --- LSTM ---
         # lstm_out shape: (Batch, Seq_Len, hidden_size)
