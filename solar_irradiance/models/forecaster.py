@@ -102,15 +102,16 @@ class Forecaster(pl.LightningModule):
             from solar_irradiance.models.architectures.ansong_kalisi_cnn_lstm import KALiSI
 
             image_input_dim = (input_channels, 128, 128)
-            numeric_input_dim = 4
+            numeric_input_dim = 5
             self.network = KALiSI(image_input_dim, numeric_input_dim)
 
-        self.num_features += 4  # Add 4 historical irradiances
-        self.network_head = torch.nn.Sequential(
-            torch.nn.Linear(self.num_features, 256),
-            torch.nn.ReLU(inplace=False),
-            torch.nn.Linear(256, 1),
-        )
+        if model_name not in ["mercier_vit", "jonathan_attention_cnn", "ansong_kalisi_cnn_lstm"]:
+            self.num_features += 4  # Add 4 historical irradiances
+            self.network_head = torch.nn.Sequential(
+                torch.nn.Linear(self.num_features, 256),
+                torch.nn.ReLU(inplace=False),
+                torch.nn.Linear(256, 1),
+            )
 
         if loss_function == "MSE":
             self.loss = torch.nn.MSELoss()
