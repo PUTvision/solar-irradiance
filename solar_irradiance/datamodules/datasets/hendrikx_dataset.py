@@ -173,22 +173,24 @@ class FolsomForecastingDataset(Dataset):
         and referenced in the paper's context.
 
         Args:
-            latitude (float): Site latitude.
-            longitude (float): Site longitude.
-            altitude (float): Site altitude in meters.
-            timestamp (pd.DatetimeIndex): A pandas DatetimeIndex of timestamps.
+            timestamp (pd.Timestamp): A pandas Timestamp.
 
         Returns:
-            pd.DataFrame: A DataFrame with the clear-sky GHI, DNI, and DHI.
+            float: The clear-sky GHI value.
         """
 
         # 1. Define the location
         location = pvlib.location.Location(latitude=self.latitude, longitude=self.longitude, altitude=self.altitude)
 
-        # 2. Get the clear-sky irradiance
-        # This call bundles solar position calculation and the Ineichen model
+        # 2. Convert single Timestamp to DatetimeIndex (pvlib requires this)
+        if isinstance(timestamp, pd.Timestamp):
+            timestamp = pd.DatetimeIndex([timestamp])
+
+        # 3. Get the clear-sky irradiance
         clearsky = location.get_clearsky(timestamp)
-        return clearsky["ghi"]
+
+        # 4. Return the scalar GHI value (first element since we only have one timestamp)
+        return clearsky["ghi"].iloc[0]
 
     def calculate_csi(self, measured_ghi, clear_sky_ghi):
         """
@@ -203,22 +205,17 @@ class FolsomForecastingDataset(Dataset):
         Returns:
             pd.Series: The calculated Clear Sky Index.
         """
+        if clear_sky_ghi == 0:
+            return 0.0
+
         # Create a copy to avoid modifying the original series
         csi = measured_ghi / clear_sky_ghi
 
-        # --- Handle edge cases ---
+        # Cap CSI at 1.2 for edge cases
+        csi = min(csi, 1.2)
 
-        # 1. When clear_sky_ghi is 0 (e.g., at night), GHI is also 0.
-        #    We can set CSI to 0 or NaN. 0 is often easier for ML models.
-        csi = csi.fillna(0)
-
-        # 2. In some cases (e.g., cloud-edge effects), measured GHI can be
-        #    *higher* than clear-sky GHI. We cap CSI at a reasonable value,
-        #    often 1.0 or slightly higher. Let's cap it at 1.2 for this example.
-        csi[csi > 1.2] = 1.2
-
-        # 3. Replace any infinities (if measured_ghi > 0 when clear_sky_ghi=0)
-        csi.replace([np.inf, -np.inf], 0, inplace=True)
+        if np.isinf(csi):
+            return 0.0
 
         return csi
 
@@ -230,14 +227,18 @@ class FolsomForecastingDataset(Dataset):
             timestamp (pd.Timestamp): The timestamp for which to calculate solar features.
 
         Returns:
-            pd.DataFrame: A DataFrame with the requested solar features.
+            tuple: (zenith, azimuth, sun_earth_distance)
         """
+        # Convert single Timestamp to DatetimeIndex
+        if isinstance(timestamp, pd.Timestamp):
+            timestamp = pd.DatetimeIndex([timestamp])
+
         # Get solar position
         solar_pos = pvlib.solarposition.get_solarposition(
             time=timestamp, latitude=self.latitude, longitude=self.longitude, altitude=self.altitude
         )
 
-        return solar_pos["Zenith"].values[0], solar_pos["Azimuth"].values[0], solar_pos["Sun-earth distance"].values[0]
+        return solar_pos["zenith"].iloc[0], solar_pos["azimuth"].iloc[0], solar_pos["apparent_elevation"].iloc[0]
 
     def __getitem__(self, index: int) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         period = self._periods[index]
@@ -253,8 +254,8 @@ class FolsomForecastingDataset(Dataset):
             cloud_pixels = self.get_cloud_pixels(image)
             edge_count = self.get_edge_count(image)
             corner_count = self.get_corner_count(image)
-            # Convert filename from yyyymmdd__HHMMSS format to datetime
-            timestamp = pd.to_datetime(image_path.stem, format="%Y%m%d__%H%M%S")
+            # Convert filename from yyyymmdd_HHMMSS format to datetime
+            timestamp = pd.to_datetime(image_path.stem, format="%Y%m%d_%H%M%S")
             timestamp = timestamp.tz_localize(self.us_pacific)
             clear_sky_values = self.get_clear_sky_values(timestamp=timestamp)
             csi = self.calculate_csi(irradiance, clear_sky_values)
