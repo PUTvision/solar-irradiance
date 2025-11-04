@@ -117,10 +117,10 @@ class AttentionCNN(nn.Module):
         # as it's not specified in the diagram. Let's use 1024.
         hidden_dim = 1024
 
+        # Add 4 for historical irradiance values that will be concatenated
         self.regressor = nn.Sequential(
-            nn.Flatten(),
             nn.Dropout(p=0.5),
-            nn.Linear(flat_features, hidden_dim),
+            nn.Linear(flat_features + 4, hidden_dim),
             nn.ReLU(inplace=True),
             nn.Dropout(p=0.5),
             nn.Linear(hidden_dim, num_classes),  # 3 outputs (GHI, DNI, DHI)
@@ -151,7 +151,7 @@ class AttentionCNN(nn.Module):
             nn.MaxPool2d(kernel_size=2, stride=2),
         )
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, irradiance_history: torch.Tensor) -> torch.Tensor:
         """
         Forward pass for the AttentionCNN model.
 
@@ -159,6 +159,8 @@ class AttentionCNN(nn.Module):
         ----------
         x : torch.Tensor
             Input tensor. Shape (B, sequence_length * 3, 128, 128).
+        irradiance_history : torch.Tensor
+            Historical irradiance values. Shape (B, 4).
 
         Returns
         -------
@@ -175,8 +177,10 @@ class AttentionCNN(nn.Module):
         # Apply channel-wise attention
         x = self.attention(x)
 
+        x = torch.flatten(x, start_dim=1)
+
         # Pass through the regressor head
-        x = self.regressor(x)
+        x = self.regressor(torch.cat([x, irradiance_history], dim=1))
 
         return x
 

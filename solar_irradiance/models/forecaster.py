@@ -19,6 +19,7 @@ class Forecaster(pl.LightningModule):
     ) -> None:
         super().__init__()
 
+        self._model_name = model_name
         self._lr = lr
         self._lr_patience = lr_patience
 
@@ -146,9 +147,11 @@ class Forecaster(pl.LightningModule):
         optimizer.zero_grad(set_to_none=True)
 
     def forward(self, x: torch.Tensor, irradiance_history: torch.Tensor) -> torch.Tensor:
-        x = self.network(x)
-        x = self.network_head(torch.cat([x, irradiance_history], dim=1))
-        # x = self.network(x, irradiance_history)
+        if self._model_name in ["mercier_vit", "jonathan_attention_cnn", "ansong_kalisi_cnn_lstm"]:
+            x = self.network(x, irradiance_history)
+        else:
+            x = self.network(x)
+            x = self.network_head(torch.cat([x, irradiance_history], dim=1))
         return x
 
     def training_step(self, batch: torch.Tensor, batch_idx: int) -> torch.Tensor | None:
