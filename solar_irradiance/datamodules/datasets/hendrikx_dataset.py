@@ -239,7 +239,7 @@ class FolsomForecastingDataset(Dataset):
 
         return solar_pos["Zenith"].values[0], solar_pos["Azimuth"].values[0], solar_pos["Sun-earth distance"].values[0]
 
-    def __getitem__(self, index: int) -> tuple[torch.Tensor, torch.Tensor]:
+    def __getitem__(self, index: int) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         period = self._periods[index]
 
         features_list = []
@@ -266,7 +266,7 @@ class FolsomForecastingDataset(Dataset):
 
         target_irradiance = period["target_irradiance"]  # / MAX_IRRADIANCE
 
-        return (torch.Tensor(features_list), torch.Tensor([target_irradiance]))
+        return (torch.Tensor(features_list), torch.Tensor(features_list), torch.Tensor([target_irradiance]))
 
     def __len__(self) -> int:
         return len(self._periods)

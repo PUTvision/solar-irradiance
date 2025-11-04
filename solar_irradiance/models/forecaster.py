@@ -105,6 +105,11 @@ class Forecaster(pl.LightningModule):
             image_input_dim = (input_channels, 128, 128)
             numeric_input_dim = 5
             self.network = KALiSI(image_input_dim, numeric_input_dim)
+        elif model_name == "hendrikx_lstm":
+            from solar_irradiance.models.architectures.hendrikx_lstm import LSTMPredictor
+
+            input_features = 9  # Number of historical images
+            self.network = LSTMPredictor(input_features=input_features)
 
         if model_name not in ["mercier_vit", "jonathan_attention_cnn", "ansong_kalisi_cnn_lstm"]:
             self.num_features += 4  # Add 4 historical irradiances
@@ -149,6 +154,8 @@ class Forecaster(pl.LightningModule):
     def forward(self, x: torch.Tensor, irradiance_history: torch.Tensor) -> torch.Tensor:
         if self._model_name in ["mercier_vit", "jonathan_attention_cnn", "ansong_kalisi_cnn_lstm"]:
             x = self.network(x, irradiance_history)
+        elif self._model_name == "hendrikx_lstm":
+            x = self.network(x)
         else:
             x = self.network(x)
             x = self.network_head(torch.cat([x, irradiance_history], dim=1))

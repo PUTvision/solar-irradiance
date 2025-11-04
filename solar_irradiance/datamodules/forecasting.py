@@ -8,7 +8,10 @@ from sklearn.model_selection import train_test_split
 import torch.utils.data
 
 from solar_irradiance.datamodules.datasets import FolsomForecastingDataset
+
 # from solar_irradiance.datamodules.datasets.ansong_kalisi_dataset import FolsomForecastingDataset
+# from solar_irradiance.datamodules.datasets.hendrikx_dataset import FolsomForecastingDataset
+
 
 class ForecastingDataModule(LightningDataModule):
     def __init__(
