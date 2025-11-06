@@ -53,7 +53,6 @@ class FolsomForecastingDataset(Dataset):
         Returns:
             np.array: Optical flow maps, shape [T, H, W, 2] (float32)
         """
-        print("Calculating optical flow (Preprocessing)...")
         t, h, w, c = image_sequence_np.shape
         flow_maps = np.zeros((t, h, w, 2), dtype=np.float32)
 
@@ -94,7 +93,7 @@ class FolsomForecastingDataset(Dataset):
 
         target_irradiance = period["target_irradiance"]  # / MAX_IRRADIANCE
         optical_flows = torch.from_numpy(self._calculate_optical_flow(np.array(source_images))).permute(0, 3, 1, 2)
-        torch_images = torch.from_numpy(source_images).permute(0, 3, 1, 2)
+        torch_images = torch.from_numpy(np.array(source_images)).permute(0, 3, 1, 2)
 
         return (torch_images, optical_flows, torch.Tensor(source_irradiances), torch.Tensor([target_irradiance]))
 

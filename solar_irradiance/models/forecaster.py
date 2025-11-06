@@ -115,7 +115,7 @@ class Forecaster(pl.LightningModule):
                 img_h=128,
                 img_w=128,
                 seq_len=4,
-                forecast_horizon=15,
+                forecast_horizon=1,
                 fused_channels=64,
                 tcn_channels=[32, 32, 64],
                 attn_dim=64,

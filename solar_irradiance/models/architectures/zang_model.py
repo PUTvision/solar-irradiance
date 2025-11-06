@@ -1,19 +1,11 @@
-# This class is a PyTorch implementation of the model presented in the article:
-# "Improving ultra-short-term photovoltaic power forecasting using a novel
-# sky-image-based framework considering spatial-temporal feature interaction"
-#
-# "PV Power" has been replaced with "Solar Irradiance" as requested.
-#
-# NOTE: This implementation requires:
-# 1. PyTorch (torch, torch.nn, torch.nn.functional)
-# 2. OpenCV (cv2) for the optical flow preprocessing.
-#    Optical flow must be calculated *before* feeding data to the model.
-
+"""
+Haixiang Zang, Dianhao Chen, Jingxuan Liu, Lilin Cheng, Guoqiang Sun, Zhinong Wei
+Improving ultra-short-term photovoltaic power forecasting using a novel sky-image-based framework considering spatial-temporal feature interaction
+https://doi.org/10.1016/j.energy.2024.130538
+"""
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
-# import cv2 # Would be needed in your data pipeline for Farneback optical flow
 
 # --- 1. Helper Modules (Building Blocks) ---
 
