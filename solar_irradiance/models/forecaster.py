@@ -121,13 +121,25 @@ class Forecaster(pl.LightningModule):
                 attn_dim=64,
                 val_dim=32,
             )
+        elif model_name == "xu_model":
+            from solar_irradiance.models.architectures.xu_model import ViTGRUForecaster
+
+            self.network = ViTGRUForecaster(
+                embed_dim=512,
+                patch_size=16,
+                num_layers=4,
+                num_heads=4,
+                mlp_dim=1024,
+                output_dim=256,
+                dropout=0.1,
+            )
         elif model_name == "hendrikx_lstm":
             from solar_irradiance.models.architectures.hendrikx_lstm import LSTMPredictor
 
             input_features = 9  # Number of historical images
             self.network = LSTMPredictor(input_features=input_features)
 
-        if model_name not in ["zang_model", "mercier_vit", "jonathan_attention_cnn", "ansong_kalisi_cnn_lstm"]:
+        if model_name not in ["xu_model", "zang_model", "mercier_vit", "jonathan_attention_cnn", "ansong_kalisi_cnn_lstm"]:
             self.num_features += 4  # Add 4 historical irradiances
             self.network_head = torch.nn.Sequential(
                 torch.nn.Linear(self.num_features, 256),
@@ -168,7 +180,7 @@ class Forecaster(pl.LightningModule):
         optimizer.zero_grad(set_to_none=True)
 
     def forward(self, x: torch.Tensor, optical_flows, irradiance_history: torch.Tensor) -> torch.Tensor:
-        if self._model_name in ["mercier_vit", "jonathan_attention_cnn", "ansong_kalisi_cnn_lstm"]:
+        if self._model_name in ["xu_model", "mercier_vit", "jonathan_attention_cnn", "ansong_kalisi_cnn_lstm"]:
             x = self.network(x, irradiance_history)
         elif self._model_name == "hendrikx_lstm":
             x = self.network(x)
