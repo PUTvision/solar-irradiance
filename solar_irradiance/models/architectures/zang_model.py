@@ -104,11 +104,15 @@ class TemporalBlock(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, dilation):
         super().__init__()
 
-        # WeightNorm is applied to the conv layers
-        self.conv1 = nn.utils.weight_norm(CausalConv1d(in_channels, out_channels, kernel_size, dilation=dilation))
-        self.relu1 = nn.ReLU()
+        # Create CausalConv1d layers first
+        self.conv1 = CausalConv1d(in_channels, out_channels, kernel_size, dilation=dilation)
+        self.conv2 = CausalConv1d(out_channels, out_channels, kernel_size, dilation=dilation)
 
-        self.conv2 = nn.utils.weight_norm(CausalConv1d(out_channels, out_channels, kernel_size, dilation=dilation))
+        # Apply WeightNorm to the inner conv layers using the new API
+        self.conv1.conv = torch.nn.utils.parametrizations.weight_norm(self.conv1.conv)
+        self.conv2.conv = torch.nn.utils.parametrizations.weight_norm(self.conv2.conv)
+
+        self.relu1 = nn.ReLU()
         self.relu2 = nn.ReLU()
 
         self.net = nn.Sequential(self.conv1, self.relu1, self.conv2, self.relu2)
@@ -182,6 +186,9 @@ class TemporalStreamConvLSTM(nn.Module):
         self.hidden_dims = hidden_dims
         self.num_layers = len(hidden_dims)
 
+        # Add downsampling to match spatial stream (2 maxpools = 4x reduction)
+        self.downsample = nn.MaxPool2d(kernel_size=2, stride=2)
+
         cells = []
         for i in range(self.num_layers):
             cur_input_dim = in_channels if i == 0 else hidden_dims[i - 1]
@@ -194,6 +201,15 @@ class TemporalStreamConvLSTM(nn.Module):
     def forward(self, x):
         b, t, c, h, w = x.shape
 
+        # Downsample optical flow to match spatial stream output (128->64->32)
+        x_flat = x.view(b * t, c, h, w)
+        x_down = self.downsample(x_flat)  # 128 -> 64
+        x_down = self.downsample(x_down)  # 64 -> 32
+        _, _, h_down, w_down = x_down.shape
+        x = x_down.view(b, t, c, h_down, w_down)
+
+        h, w = h_down, w_down
+
         # Initialize hidden states
         hidden_states = []
         for cell in self.cells:
@@ -205,22 +221,23 @@ class TemporalStreamConvLSTM(nn.Module):
             x_t = x[:, t_step, :, :, :]
 
             for layer_idx in range(self.num_layers):
-                h, c = hidden_states[layer_idx]
-                h, c = self.cells[layer_idx](x_t, (h, c))
-                hidden_states[layer_idx] = (h, c)
-                x_t = h  # Output of this layer is input to the next
+                h_state, c_state = hidden_states[layer_idx]
+                h_state, c_state = self.cells[layer_idx](x_t, (h_state, c_state))
+                hidden_states[layer_idx] = (h_state, c_state)
+                x_t = h_state  # Output of this layer is input to the next
 
-            layer_outputs.append(h)
+            layer_outputs.append(h_state)
 
         # Stack outputs along the time dimension
         out = torch.stack(layer_outputs, dim=1)  # (B, T, C_hidden, H, W)
 
         # Project the output
         # Need to reshape for 1x1 Conv
-        out_flat = out.view(b * t, self.hidden_dims[-1], h, w)
+        _, _, c_hidden, h_out, w_out = out.shape
+        out_flat = out.view(b * t, self.hidden_dims[-1], h_out, w_out)
         out_proj = self.project(out_flat)
-        _, c_out, h_out, w_out = out_proj.shape
-        out = out_proj.view(b, t, c_out, h_out, w_out)
+        _, c_out, h_final, w_final = out_proj.shape
+        out = out_proj.view(b, t, c_out, h_final, w_final)
 
         return out
 
@@ -250,8 +267,10 @@ class GateUnit(nn.Module):
         e_s = self.conv_s(img_flat)  # (B*T, 1, H, W)
         e_t = self.conv_t(img_flat)  # (B*T, 1, H, W)
 
+        # Get feature map dimensions
+        _, _, c_feat, h_feat, w_feat = spatial_features.shape
+
         # Resize scores to match feature map dimensions
-        _, _, h_feat, w_feat = spatial_features.shape[2:]
         e_s = F.interpolate(e_s, size=(h_feat, w_feat), mode="bilinear")
         e_t = F.interpolate(e_t, size=(h_feat, w_feat), mode="bilinear")
 
@@ -265,7 +284,6 @@ class GateUnit(nn.Module):
         w_s, w_t = torch.chunk(weights, 2, dim=1)  # (B*T, 1, ...), (B*T, 1, ...)
 
         # Reshape features for fusion
-        _, _, c_feat, _, _ = spatial_features.shape
         spatial_flat = spatial_features.view(b * t, c_feat, h_feat, w_feat)
         temporal_flat = temporal_features.view(b * t, c_feat, h_feat, w_feat)
 
