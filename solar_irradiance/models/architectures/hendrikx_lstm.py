@@ -5,6 +5,7 @@ https://doi.org/10.1016/j.solener.2024.112463
 https://github.com/nielsyh/ASI_playground/blob/master/models/models_ts/lstm_model.py
 """
 
+import torch
 import torch.nn as nn
 
 
@@ -42,6 +43,7 @@ class LSTMPredictor(nn.Module):
         # x input shape: (batch_size, sequence_length, input_features)
         # --- LSTM 1 (return_sequences=True) ---
         lstm_out, _ = self.lstm1(x)
+        lstm_out = torch.relu(lstm_out)
 
         # --- LSTM 2 (return_sequences=False) ---
         # We take the output from the *last* time step.
@@ -50,6 +52,7 @@ class LSTMPredictor(nn.Module):
         # h_n shape is (num_layers, batch_size, hidden_size2)
         # We take the last layer's hidden state.
         last_hidden_state = h_n.squeeze(0)  # Shape: (batch_size, hidden_size2)
+        last_hidden_state = torch.relu(last_hidden_state)
 
         # --- Dense Layers ---
         x = self.fc1(last_hidden_state)
