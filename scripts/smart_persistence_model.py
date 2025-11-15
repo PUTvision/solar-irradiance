@@ -22,7 +22,13 @@ MAX_IRRADIANCE = 1466.0  # max irradiance in the dataset
     type=click.Path(exists=True, file_okay=True, path_type=Path),
     default="data/prepared/clear_sky_ineichen.csv",
 )
-def evaluate_smart_persistence_model(periods_path: Path, clear_sky_path: Path):
+@click.option(
+    "--forecasting-horizon",
+    help="Forecasting horizon in minutes",
+    type=int,
+    default=15,
+)
+def evaluate_smart_persistence_model(periods_path: Path, clear_sky_path: Path, forecasting_horizon: int):
     # Load clear sky data
     clear_sky_df = pd.read_csv(clear_sky_path)
     clear_sky_df["datetime"] = pd.to_datetime(clear_sky_df["datetime"], utc=True).dt.tz_convert("US/Pacific")
@@ -49,7 +55,7 @@ def evaluate_smart_persistence_model(periods_path: Path, clear_sky_path: Path):
         last_clear_sky = clear_sky_dict.get(last_timestamp)
 
         # Get clear sky irradiance for target time
-        target_timestamp = last_timestamp + pd.Timedelta(minutes=30)
+        target_timestamp = last_timestamp + pd.Timedelta(minutes=forecasting_horizon)
         target_clear_sky = clear_sky_dict.get(target_timestamp)
 
         if last_clear_sky is not None and target_clear_sky is not None and last_clear_sky > 0:
@@ -75,6 +81,8 @@ def evaluate_smart_persistence_model(periods_path: Path, clear_sky_path: Path):
     mae = mean_absolute_error(preds, target)
     mse = mean_squared_error(preds, target)
     rmse = mean_squared_error(preds, target, squared=False)
+    print("--- Smart Persistence Model evaluation ---")
+    print(f"Forecasting horizon: {forecasting_horizon} minutes")
     print(f"MAPE [%]: {mape*100:.2f}")
     print(f"MAE [W/m^2]: {mae}")
     print(f"MSE (normalized): {mse}")

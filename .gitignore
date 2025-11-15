@@ -350,3 +350,6 @@ models/*
 
 # Ignore pre-generated optical flows
 data/flows/*
+
+# Ignore periods
+periods*.pickle
