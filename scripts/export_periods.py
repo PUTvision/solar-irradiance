@@ -17,10 +17,11 @@ def export_periods(cleaned_dataframe_path: Path, history_size: int, time_shift: 
 
     df = pd.read_csv(cleaned_dataframe_path, parse_dates=["datetime"], index_col="datetime")
 
-    print(f'Min irradiance: {df["ghi"].min()}')
-    print(f'Max irradiance: {df["ghi"].max()}')
-    print(f'Mean irradiance: {df["ghi"].mean()}')
-    print(f'Irradiance std: {df["ghi"].std()}')
+    ghi_positive = df[df["ghi"] > 0]["ghi"]
+    print(f'Min irradiance: {ghi_positive.min()}')
+    print(f'Max irradiance: {ghi_positive.max()}')
+    print(f'Mean irradiance: {ghi_positive.mean()}')
+    print(f'Irradiance std: {ghi_positive.std()}')
 
     for t, _ in tqdm(df.iterrows(), total=len(df)):
         t = pd.Timestamp(t)
