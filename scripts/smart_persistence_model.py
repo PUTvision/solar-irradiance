@@ -31,7 +31,7 @@ MAX_IRRADIANCE = 1466.0  # max irradiance in the dataset
 def evaluate_smart_persistence_model(periods_path: Path, clear_sky_path: Path, forecasting_horizon: int):
     # Load clear sky data
     clear_sky_df = pd.read_csv(clear_sky_path)
-    clear_sky_df["datetime"] = pd.to_datetime(clear_sky_df["datetime"], utc=True).dt.tz_convert("US/Pacific")
+    clear_sky_df["datetime"] = pd.to_datetime(clear_sky_df["datetime"], utc=False)
     clear_sky_dict = dict(zip(clear_sky_df["datetime"], clear_sky_df["ghi_clear"], strict=False))
 
     with periods_path.open("rb") as f:
@@ -41,6 +41,7 @@ def evaluate_smart_persistence_model(periods_path: Path, clear_sky_path: Path, f
 
     target = []
     preds = []
+    naive_count = 0
 
     for p in tqdm(test_periods):
         # Get the last observed irradiance and its clear sky value
@@ -49,7 +50,7 @@ def evaluate_smart_persistence_model(periods_path: Path, clear_sky_path: Path, f
         # Extract timestamp from image_name (format: yyyymmdd_HHMMSS.jpg)
         image_name = last_history["image_name"]
         date_time_str = image_name.replace(".jpg", "")
-        last_timestamp = pd.to_datetime(date_time_str, format="%Y%m%d_%H%M%S").tz_localize("US/Pacific")
+        last_timestamp = pd.to_datetime(date_time_str, format="%Y%m%d_%H%M%S", utc=False)
 
         # Get clear sky irradiance for last observation
         last_clear_sky = clear_sky_dict.get(last_timestamp)
@@ -61,6 +62,7 @@ def evaluate_smart_persistence_model(periods_path: Path, clear_sky_path: Path, f
         if last_clear_sky is not None and target_clear_sky is not None and last_clear_sky > 0:
             # Calculate clear sky index from last observation
             kc_last = last_irradiance / last_clear_sky
+            kc_last = min(max(kc_last, 0.0), 2.0)  # clamp to [0, 2]
 
             # Predict target irradiance using smart persistence
             # (assume clear sky index persists, multiply by target clear sky)
@@ -68,11 +70,14 @@ def evaluate_smart_persistence_model(periods_path: Path, clear_sky_path: Path, f
         else:
             # Fallback to naive persistence if clear sky data is missing
             pred_irradiance = last_irradiance
+            naive_count += 1
 
         target_irradiance = p["target_irradiance"]
 
         target.append(target_irradiance)
         preds.append(pred_irradiance)
+
+    print(f"Used naive persistence for {naive_count} out of {len(test_periods)} periods.")
 
     preds = torch.as_tensor(preds)
     target = torch.as_tensor(target)

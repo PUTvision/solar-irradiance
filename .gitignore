@@ -351,5 +351,8 @@ models/*
 # Ignore pre-generated optical flows
 data/flows/*
 
+# Ignore CSVs
+*.csv
+
 # Ignore periods
 periods*.pickle
