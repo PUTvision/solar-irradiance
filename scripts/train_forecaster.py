@@ -31,6 +31,7 @@ def train_forecaster(data_root: Path, periods_filename: str):
     pl.seed_everything(seed=cfg.seed)
 
     datamodule = ForecastingDataModule(
+        dataset_name=cfg.model.model_name,
         root_data_path=data_root,
         periods_path=data_root / periods_filename,
         augment=cfg.datamodule.augment,

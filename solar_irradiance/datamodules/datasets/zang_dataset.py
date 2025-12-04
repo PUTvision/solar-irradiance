@@ -11,7 +11,7 @@ from torch.utils.data import Dataset
 MAX_IRRADIANCE = 1466.0  # max irradiance in the dataset
 
 
-class FolsomForecastingDataset(Dataset):
+class ZangFolsomForecastingDataset(Dataset):
     def __init__(
         self,
         data_root: Path,

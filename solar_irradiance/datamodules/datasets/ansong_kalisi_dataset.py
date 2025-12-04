@@ -26,7 +26,7 @@ OPTICAL_FLOWS = {
 }
 
 
-class FolsomForecastingDataset(Dataset):
+class AnsongFolsomForecastingDataset(Dataset):
     latitude = 38.642
     longitude = -121.148
     camera_orientation_compensation = 165

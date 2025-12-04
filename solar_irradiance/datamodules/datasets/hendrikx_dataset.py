@@ -12,7 +12,7 @@ from torch.utils.data import Dataset
 MAX_IRRADIANCE = 1466.0  # max irradiance in the dataset
 
 
-class FolsomForecastingDataset(Dataset):
+class HendrikxFolsomForecastingDataset(Dataset):
     latitude = 38.642
     longitude = -121.148
     altitude = 68  # Altitude in meters
