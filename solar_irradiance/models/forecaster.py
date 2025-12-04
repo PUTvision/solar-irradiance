@@ -76,6 +76,7 @@ class Forecaster(pl.LightningModule):
         elif model_name == "mercier_vit":
             from solar_irradiance.models.architectures.mercier_vit import MercierViT
 
+            numeric_input_size = 4  # 4 historical irradiances
             network_encoder = timm.create_model(
                 "deit_tiny_patch16_224",
                 num_classes=0,  # remove classifier nn.Linear
@@ -85,6 +86,7 @@ class Forecaster(pl.LightningModule):
             )
             self.network = MercierViT(
                 inmodel=network_encoder,
+                numeric_input_size=numeric_input_size,
                 number_of_linear_layers=1,
                 drop_out_lin=0.1,
                 intermediate_linear_layer_shape=512,

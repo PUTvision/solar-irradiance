@@ -89,7 +89,7 @@ class KALiSI(nn.Module):
 
         # --- Prepare for LSTM ---
         # Add sequence dimension (Seq_Len=1)
-        # Shape becomes: (Batch, 1, 512)
+        # Shape becomes: (Batch, 1, dense_size)
         x_seq = x_reduced.unsqueeze(1)
 
         # --- LSTM ---

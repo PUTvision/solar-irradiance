@@ -16,7 +16,10 @@ END_FOLSOM = "2016-12-31 16:00:00"
 @click.option("--timezone", default=TIMEZONE_FOLSOM, help="Timezone of the location.")
 @click.option("--start", default=START_FOLSOM, help="Start time (local). Format `YYYY-MM-DD HH:MM:SS`")
 @click.option("--end", default=END_FOLSOM, help="End time (local). Format `YYYY-MM-DD HH:MM:SS`")
-def generate_clear_sky_reference(latitude, longitude, timezone, start, end):
+@click.option("--output-path", default="data/prepared/clear_sky_ineichen.csv", help="Output CSV file path for clear-sky data.")
+def generate_clear_sky_reference(
+    latitude: float, longitude: float, timezone: str, start: str, end: str, output_path: str
+) -> None:
     print(f"Generating clear-sky data for ({latitude}, {longitude}) using Ineichen-Perez model.")
     print(f"Time range (local): {start} to {end}")
 
@@ -51,7 +54,6 @@ def generate_clear_sky_reference(latitude, longitude, timezone, start, end):
     print("\n--- Data Head ---")
     print(clearsky_data.head(3))
 
-    output_path = "data/prepared/clear_sky_ineichen_poznan.csv"
     clearsky_data.to_csv(output_path, index_label="datetime")
     print(f"\nClear-sky data saved to '{output_path}'")
 

@@ -3,6 +3,7 @@ from multiprocessing import Pool, cpu_count
 from pathlib import Path
 from typing import Any
 
+import click
 import cv2
 import numpy as np
 import pandas as pd
@@ -201,7 +202,7 @@ def _compute_features_worker(image_item, data_root, latitude, longitude, altitud
 
         clear_sky_values = HendrikxFeatureComputer.get_clear_sky_values(timestamp, latitude, longitude, altitude)
         csi = HendrikxFeatureComputer.calculate_csi(irradiance, clear_sky_values)
-        zenith, azimuth, sun_earth_distance = HendrikxFeatureComputer.get_solar_features(
+        zenith, azimuth, apparent_elevation = HendrikxFeatureComputer.get_solar_features(
             timestamp, latitude, longitude, altitude
         )
 
@@ -216,18 +217,27 @@ def _compute_features_worker(image_item, data_root, latitude, longitude, altitud
             "csi": csi,
             "zenith": zenith,
             "azimuth": azimuth,
-            "apparent_elevation": sun_earth_distance,
+            "apparent_elevation": apparent_elevation,
         }
     except Exception as e:
         print(f"Error processing {image_name}: {e}")
         return None
 
 
-if __name__ == "__main__":
-    # Example usage
-    data_root = Path("/home/mateusz.piechocki/solar-irradiance/data/prepared")
-    periods_path = Path("/home/mateusz.piechocki/solar-irradiance/data/prepared/periods.pickle")
-
+@click.command()
+@click.option(
+    "--data-root",
+    type=click.Path(exists=True, file_okay=False, path_type=Path),
+    required=True,
+    help="Path to the data root directory.",
+)
+@click.option(
+    "--periods-path",
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+    required=True,
+    help="Path to the periods pickle file.",
+)
+def main(data_root: Path, periods_path: Path):
     # Load periods
     with periods_path.open("rb") as f:
         periods = pd.read_pickle(f)
@@ -248,3 +258,7 @@ if __name__ == "__main__":
     print(features_df.head())
     print("\nDataFrame info:")
     print(features_df.info())
+
+
+if __name__ == "__main__":
+    main()

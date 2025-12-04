@@ -13,12 +13,13 @@ class MercierViT(nn.Module):
     def __init__(
         self,
         inmodel,
-        number_of_linear_layers,
-        drop_out_lin,
-        intermediate_linear_layer_shape,
-        linear_activation_func,
-        sigmoid_on,
-        y_shape,
+        numeric_input_size: int,
+        number_of_linear_layers: int,
+        drop_out_lin: float,
+        intermediate_linear_layer_shape: int,
+        linear_activation_func: str,
+        sigmoid_on: bool,
+        y_shape: tuple[int, ...],
     ) -> None:
         super().__init__()
 
@@ -44,7 +45,7 @@ class MercierViT(nn.Module):
         self.vit_main = inmodel
 
         linear_layers = []
-        layer_in_shape = self.lin_in_shape + 4  # 4 numeric inputs concatenated
+        layer_in_shape = self.lin_in_shape + numeric_input_size  # numeric inputs concatenated
         for lin_layer in range(1, number_of_linear_layers):
             linear_layers.append(nn.Dropout(drop_out_lin))
             linear_layers.append(nn.Linear(layer_in_shape, intermediate_linear_layer_shape))
