@@ -40,17 +40,20 @@ class ZangFolsomForecastingDataset(Dataset):
             thickness=-1,
         )
 
-    def _calculate_optical_flow(self, image_sequence_np):
+    @staticmethod
+    def _calculate_optical_flow(image_sequence_np):
         """
         Calculates Farneback optical flow.
-        This must be done in your DataLoader, not in the model's forward pass,
-        as it's a non-differentiable CPU operation.
 
-        Args:
-            image_sequence_np (np.array): Shape [T, H, W, C] (uint8)
+        Parameters
+        ----------
+        image_sequence_np : np.array
+            Shape [T, H, W, C] (uint8)
 
-        Returns:
-            np.array: Optical flow maps, shape [T, H, W, 2] (float32)
+        Returns
+        -------
+        np.array
+            Optical flow maps, shape [T, H, W, 2] (float32)
         """
         t, h, w, c = image_sequence_np.shape
         flow_maps = np.zeros((t, h, w, 2), dtype=np.float32)
@@ -69,6 +72,7 @@ class ZangFolsomForecastingDataset(Dataset):
         period = self._periods[index]
 
         source_images = []
+        images_for_optical_flows = []
         source_irradiances = []
         replay_data = None
 
@@ -88,10 +92,11 @@ class ZangFolsomForecastingDataset(Dataset):
             cropped_image = np.where(self._crop_mask, norm_image, 0.0).astype(np.float32)
 
             source_images.append(cropped_image)
+            images_for_optical_flows.append(image)
             source_irradiances.append(irradiance)
 
         target_irradiance = period["target_irradiance"]
-        optical_flows = torch.from_numpy(self._calculate_optical_flow(np.array(source_images))).permute(0, 3, 1, 2)
+        optical_flows = torch.from_numpy(self._calculate_optical_flow(np.array(images_for_optical_flows))).permute(0, 3, 1, 2)
         torch_images = torch.from_numpy(np.array(source_images)).permute(0, 3, 1, 2)
 
         return (torch_images, optical_flows, torch.Tensor(source_irradiances), torch.Tensor([target_irradiance]))
