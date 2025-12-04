@@ -70,9 +70,9 @@ class HendrikxFeatureComputer:
         if clear_sky_ghi == 0:
             return 0.0
         csi = measured_ghi / clear_sky_ghi
-        csi = min(csi, 1.2)
         if np.isinf(csi):
             return 0.0
+        csi = min(max(csi, 0.0), 2.0)  # Clamp to [0, 2]
         return csi
 
     @staticmethod

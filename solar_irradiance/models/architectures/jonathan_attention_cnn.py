@@ -72,7 +72,7 @@ class AttentionCNN(nn.Module):
     This model consists of 5 CNN blocks followed by a Channel-Wise Attention layer and a final regressor head.
     """
 
-    def __init__(self, in_channels: int, num_classes: int = 3) -> None:
+    def __init__(self, in_channels: int, num_classes: int, attention_channels: int = 512) -> None:
         """
         Initializes the AttentionCNN model.
 
@@ -80,8 +80,10 @@ class AttentionCNN(nn.Module):
         ----------
         in_channels : int
             Number of input channels. As per the paper, this is (sequence_length * 3) for RGB images. E.g., for a sequence of 4 images, in_channels = 12.
-        num_classes : int, optional
-            Number of output regression targets. As per the paper, this is 3 (GHI, DNI, DHI). Default is 3.
+        num_classes : int
+            Number of output regression targets. As per the paper, this is 3 (GHI, DNI, DHI).
+        attention_channels : int, optional
+            Number of channels in the attention layer. Default is 512.
         """
         super().__init__()
 
@@ -98,20 +100,18 @@ class AttentionCNN(nn.Module):
         # Block 4: 128 -> 256
         self.block4 = self._make_block(128, 256)
 
-        # Block 5: 256 -> 512
-        self.block5 = self._make_block(256, 512)
+        # Block 5: 256 -> attention_channels
+        self.block5 = self._make_block(256, attention_channels)
 
         # --- Attention Mechanism ---
-        self.attention = ChannelAttention(in_channels=512)
+        self.attention = ChannelAttention(in_channels=attention_channels)
 
         # --- Regressor Head ---
 
         # Calculate the flattened feature size after 5 max-pooling layers.
         # Assuming 128x128 input image:
         # 128 -> 64 (pool1) -> 32 (pool2) -> 16 (pool3) -> 8 (pool4) -> 4 (pool5)
-        # So, the feature map size is 4x4.
-        # flat_features = channels * height * width
-        flat_features = 512 * 4 * 4
+        flat_features = attention_channels * 4 * 4
 
         # We infer the hidden size of the dense layer (e.g., 1024 or 4096)
         # as it's not specified in the diagram. Let's use 1024.
@@ -166,7 +166,7 @@ class AttentionCNN(nn.Module):
         Returns
         -------
         torch.Tensor
-            Model output. Shape (B, 3).
+            Model output.
         """
         # Pass through the 5 CNN blocks
         x = self.block1(x)

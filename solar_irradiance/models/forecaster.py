@@ -123,7 +123,7 @@ class Forecaster(pl.LightningModule):
         elif model_name == "hendrikx_lstm":
             from solar_irradiance.models.architectures.hendrikx_lstm import LSTMPredictor
 
-            input_features = 9  # Number of historical images
+            input_features = 9  # Number of features per time step (irradiance, brightness, ...)
             self.network = LSTMPredictor(input_features=input_features)
 
         if model_name not in [
@@ -184,7 +184,7 @@ class Forecaster(pl.LightningModule):
             x = self.network_head(torch.cat([x, irradiance_history], dim=1))
         return x
 
-    def training_step(self, batch: torch.Tensor, batch_idx: int) -> torch.Tensor | None:
+    def _forward_with_batch(self, batch) -> tuple[torch.Tensor, torch.Tensor]:
         if self._model_name == "zang_model":
             source_images, optical_flows, source_irradiances, target_irradiances = batch
             predicted_irradiances = self.forward(source_images, source_irradiances, optical_flows)
@@ -194,6 +194,11 @@ class Forecaster(pl.LightningModule):
         else:
             source_images, source_irradiances, target_irradiances = batch
             predicted_irradiances = self.forward(source_images, source_irradiances, None)
+
+        return predicted_irradiances, target_irradiances
+
+    def training_step(self, batch: tuple[torch.Tensor, ...], batch_idx: int) -> torch.Tensor | None:
+        predicted_irradiances, target_irradiances = self._forward_with_batch(batch)
 
         loss = self.loss(predicted_irradiances, target_irradiances)
         if torch.isinf(loss):
@@ -205,16 +210,8 @@ class Forecaster(pl.LightningModule):
 
         return loss
 
-    def validation_step(self, batch: torch.Tensor, batch_idx: int) -> None:
-        if self._model_name == "zang_model":
-            source_images, optical_flows, source_irradiances, target_irradiances = batch
-            predicted_irradiances = self.forward(source_images, source_irradiances, optical_flows)
-        elif self._model_name == "hendrikx_lstm":
-            features_list, target_irradiances = batch
-            predicted_irradiances = self.forward(features_list, None, None)
-        else:
-            source_images, source_irradiances, target_irradiances = batch
-            predicted_irradiances = self.forward(source_images, source_irradiances, None)
+    def validation_step(self, batch: tuple[torch.Tensor, ...], batch_idx: int) -> None:
+        predicted_irradiances, target_irradiances = self._forward_with_batch(batch)
 
         loss = self.loss(predicted_irradiances, target_irradiances)
 
@@ -222,16 +219,8 @@ class Forecaster(pl.LightningModule):
         self.val_metrics.update(predicted_irradiances, target_irradiances)
         self.log_dict(self.val_metrics, sync_dist=True)
 
-    def test_step(self, batch: torch.Tensor, batch_idx: int) -> None:
-        if self._model_name == "zang_model":
-            source_images, optical_flows, source_irradiances, target_irradiances = batch
-            predicted_irradiances = self.forward(source_images, source_irradiances, optical_flows)
-        elif self._model_name == "hendrikx_lstm":
-            features_list, target_irradiances = batch
-            predicted_irradiances = self.forward(features_list, None, None)
-        else:
-            source_images, source_irradiances, target_irradiances = batch
-            predicted_irradiances = self.forward(source_images, source_irradiances, None)
+    def test_step(self, batch: tuple[torch.Tensor, ...], batch_idx: int) -> None:
+        predicted_irradiances, target_irradiances = self._forward_with_batch(batch)
 
         loss = self.loss(predicted_irradiances, target_irradiances)
 

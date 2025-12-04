@@ -23,7 +23,7 @@ def generate_clear_sky_reference(
     print(f"Generating clear-sky data for ({latitude}, {longitude}) using Ineichen-Perez model.")
     print(f"Time range (local): {start} to {end}")
 
-    # Create the 1-minute time index for the specified day
+    # Create the 1-minute time index spanning the specified time range
     start = pd.Timestamp(start, tz=timezone)
     end = pd.Timestamp(end, tz=timezone)
     times = pd.date_range(start, end, freq="1min", tz=timezone)

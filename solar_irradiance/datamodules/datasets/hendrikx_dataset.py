@@ -2,8 +2,6 @@ from pathlib import Path
 from typing import Any
 
 from albumentations import ReplayCompose
-import cv2
-import numpy as np
 import pandas as pd
 import pytz
 import torch
@@ -37,15 +35,7 @@ class HendrikxFolsomForecastingDataset(Dataset):
     ):
         self._data_root = data_root
         self._periods = periods
-        self._image_size = image_size
 
-        self._crop_mask = cv2.circle(
-            np.zeros((image_size[1], image_size[0], 3), dtype=np.uint8),
-            (image_size[1] // 2, image_size[0] // 2),
-            image_size[0] // 2,
-            color=(1, 1, 1),
-            thickness=-1,
-        )
         # Load precomputed features DataFrame
         features_path = self._data_root / "hendrikx_features_normalized.csv"
         self._features_df = pd.read_csv(features_path, index_col="image_name")
