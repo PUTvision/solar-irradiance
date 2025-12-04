@@ -1,7 +1,7 @@
 [project]
 name = "solar_irradiance"
-version = "0.1.0"
-description = "Bag of tricks for ground-based solar irradiance forecasting using sky images."
+version = "1.1.0"
+description = "A systematic synthesis of sky image enhancement techniques for ground-based solar irradiance forecasting."
 readme = "README.md"
 requires-python = ">=3.10,<3.13"
 license = {text = "Apache-2.0"}
