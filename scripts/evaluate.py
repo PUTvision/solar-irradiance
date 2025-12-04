@@ -154,7 +154,7 @@ def evaluate(
 
         for history_item in p["history"]:
             image_path = Path(dataset_path, history_item["image_name"])
-            irradiance = history_item["irradiance"]  # / MAX_IRRADIANCE
+            irradiance = history_item["irradiance"]
             source_image = np.asarray(Image.open(image_path))
 
             preprocessing_start = time.time()
@@ -203,7 +203,7 @@ def evaluate(
             source_images.append(input_data)
             source_irradiances.append(irradiance)
 
-        target_irradiance = p["target_irradiance"]  # / MAX_IRRADIANCE
+        target_irradiance = p["target_irradiance"]
 
         image_input = np.array(source_images[-1:], dtype=np.float32)
 

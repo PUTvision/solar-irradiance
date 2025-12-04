@@ -84,7 +84,10 @@ class CausalConv1d(nn.Module):
     def forward(self, x):
         x = self.conv(x)
         # Remove padding from the right
-        return x[:, :, : -self.padding]
+        if self.padding > 0:
+            return x[:, :, : -self.padding]
+        else:
+            return x
 
 
 class TemporalBlock(nn.Module):

@@ -188,6 +188,9 @@ class Forecaster(pl.LightningModule):
         if self._model_name == "zang_model":
             source_images, optical_flows, source_irradiances, target_irradiances = batch
             predicted_irradiances = self.forward(source_images, source_irradiances, optical_flows)
+        elif self._model_name == "hendrikx_lstm":
+            features_list, target_irradiances = batch
+            predicted_irradiances = self.forward(features_list, None, None)
         else:
             source_images, source_irradiances, target_irradiances = batch
             predicted_irradiances = self.forward(source_images, source_irradiances, None)
@@ -206,6 +209,9 @@ class Forecaster(pl.LightningModule):
         if self._model_name == "zang_model":
             source_images, optical_flows, source_irradiances, target_irradiances = batch
             predicted_irradiances = self.forward(source_images, source_irradiances, optical_flows)
+        elif self._model_name == "hendrikx_lstm":
+            features_list, target_irradiances = batch
+            predicted_irradiances = self.forward(features_list, None, None)
         else:
             source_images, source_irradiances, target_irradiances = batch
             predicted_irradiances = self.forward(source_images, source_irradiances, None)
@@ -220,6 +226,9 @@ class Forecaster(pl.LightningModule):
         if self._model_name == "zang_model":
             source_images, optical_flows, source_irradiances, target_irradiances = batch
             predicted_irradiances = self.forward(source_images, source_irradiances, optical_flows)
+        elif self._model_name == "hendrikx_lstm":
+            features_list, target_irradiances = batch
+            predicted_irradiances = self.forward(features_list, None, None)
         else:
             source_images, source_irradiances, target_irradiances = batch
             predicted_irradiances = self.forward(source_images, source_irradiances, None)

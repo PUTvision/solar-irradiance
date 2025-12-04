@@ -10,7 +10,6 @@ import torch
 from torch.utils.data import Dataset
 
 MAX_IRRADIANCE = 1466.0  # max irradiance in the dataset
-# MAX_IRRADIANCE = 1600.0     # max irradiance from Hukseflux pyranometer
 
 
 class FolsomForecastingDataset(Dataset):
@@ -51,7 +50,7 @@ class FolsomForecastingDataset(Dataset):
         features_path = self._data_root / "hendrikx_features_normalized.csv"
         self._features_df = pd.read_csv(features_path, index_col="image_name")
 
-    def __getitem__(self, index: int) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    def __getitem__(self, index: int) -> tuple[torch.Tensor, torch.Tensor]:
         period = self._periods[index]
 
         features_list = []
@@ -74,9 +73,9 @@ class FolsomForecastingDataset(Dataset):
                 ]
             )
 
-        target_irradiance = period["target_irradiance"]  # / MAX_IRRADIANCE
+        target_irradiance = period["target_irradiance"]
 
-        return (torch.Tensor(features_list), torch.Tensor(features_list), torch.Tensor([target_irradiance]))
+        return (torch.Tensor(features_list), torch.Tensor([target_irradiance]))
 
     def __len__(self) -> int:
         return len(self._periods)

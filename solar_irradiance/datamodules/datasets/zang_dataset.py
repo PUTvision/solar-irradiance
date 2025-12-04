@@ -9,7 +9,6 @@ import torch
 from torch.utils.data import Dataset
 
 MAX_IRRADIANCE = 1466.0  # max irradiance in the dataset
-# MAX_IRRADIANCE = 1600.0     # max irradiance from Hukseflux pyranometer
 
 
 class FolsomForecastingDataset(Dataset):
@@ -75,7 +74,7 @@ class FolsomForecastingDataset(Dataset):
 
         for history_item in period["history"]:
             image_path = self._data_root / "images" / history_item["image_name"]
-            irradiance = history_item["irradiance"]  # / MAX_IRRADIANCE
+            irradiance = history_item["irradiance"]
             image = np.asarray(Image.open(image_path))
 
             if replay_data is None:
@@ -91,7 +90,7 @@ class FolsomForecastingDataset(Dataset):
             source_images.append(cropped_image)
             source_irradiances.append(irradiance)
 
-        target_irradiance = period["target_irradiance"]  # / MAX_IRRADIANCE
+        target_irradiance = period["target_irradiance"]
         optical_flows = torch.from_numpy(self._calculate_optical_flow(np.array(source_images))).permute(0, 3, 1, 2)
         torch_images = torch.from_numpy(np.array(source_images)).permute(0, 3, 1, 2)
 

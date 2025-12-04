@@ -29,10 +29,10 @@ def evaluate_persistence_model(periods_path: Path):
         source_irradiances = []
 
         for history_item in p["history"]:
-            irradiance = history_item["irradiance"]  # / MAX_IRRADIANCE
+            irradiance = history_item["irradiance"]
             source_irradiances.append(irradiance)
 
-        target_irradiance = p["target_irradiance"]  # / MAX_IRRADIANCE
+        target_irradiance = p["target_irradiance"]
 
         target.append(target_irradiance)
         preds.append(source_irradiances[-1])

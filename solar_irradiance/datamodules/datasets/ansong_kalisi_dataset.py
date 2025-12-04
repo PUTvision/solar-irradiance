@@ -14,7 +14,6 @@ from solar_irradiance.datamodules.cloud_mask import CloudMask
 from solar_irradiance.datamodules.sun_mask import SunMask
 
 MAX_IRRADIANCE = 1466.0  # max irradiance in the dataset
-# MAX_IRRADIANCE = 1600.0     # max irradiance from Hukseflux pyranometer
 
 
 OPTICAL_FLOWS = {
@@ -164,7 +163,7 @@ class FolsomForecastingDataset(Dataset):
 
         for history_item in period["history"]:
             image_path = self._data_root / "images" / history_item["image_name"]
-            irradiance = history_item["irradiance"]  # / MAX_IRRADIANCE
+            irradiance = history_item["irradiance"]
             image = np.asarray(Image.open(image_path))
             cloud_cover = self.calculate_cloud_cover(image)
 
@@ -212,12 +211,12 @@ class FolsomForecastingDataset(Dataset):
             source_irradiances.append(irradiance)
             cloud_covers.append(cloud_cover)
 
-        target_irradiance = period["target_irradiance"]  # / MAX_IRRADIANCE
+        target_irradiance = period["target_irradiance"]
 
         image_input = source_images[-1]
-        source_irradiances.append(cloud_covers[-1])
+        source_features = [*source_irradiances, cloud_covers[-1]]
 
-        return (image_input, torch.Tensor(source_irradiances), torch.Tensor([target_irradiance]))
+        return (image_input, torch.Tensor(source_features), torch.Tensor([target_irradiance]))
 
     def __len__(self) -> int:
         return len(self._periods)
