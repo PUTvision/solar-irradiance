@@ -1,1 +1,4 @@
+from .ansong_kalisi_dataset import AnsongFolsomForecastingDataset
 from .folsom_dataset import FolsomForecastingDataset
+from .hendrikx_dataset import HendrikxFolsomForecastingDataset
+from .zang_dataset import ZangFolsomForecastingDataset

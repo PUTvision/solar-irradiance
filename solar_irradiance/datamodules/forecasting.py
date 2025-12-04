@@ -7,12 +7,18 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 import torch.utils.data
 
-from solar_irradiance.datamodules.datasets import FolsomForecastingDataset
+from solar_irradiance.datamodules.datasets import (
+    AnsongFolsomForecastingDataset,
+    FolsomForecastingDataset,
+    HendrikxFolsomForecastingDataset,
+    ZangFolsomForecastingDataset,
+)
 
 
 class ForecastingDataModule(LightningDataModule):
     def __init__(
         self,
+        dataset_name: str,
         root_data_path: Path,
         periods_path: Path,
         augment: bool,
@@ -62,6 +68,15 @@ class ForecastingDataModule(LightningDataModule):
             ]
         )
 
+        if dataset_name == "ansong_kalisi_cnn_lstm":
+            self._dataset_class = AnsongFolsomForecastingDataset
+        elif dataset_name == "hendrikx_lstm":
+            self._dataset_class = HendrikxFolsomForecastingDataset
+        elif dataset_name == "zang_model":
+            self._dataset_class = ZangFolsomForecastingDataset
+        else:
+            self._dataset_class = FolsomForecastingDataset
+
         self._train_dataset = None
         self._val_dataset = None
         self._test_dataset = None
@@ -91,7 +106,7 @@ class ForecastingDataModule(LightningDataModule):
             val_periods, __ = train_test_split(val_periods, train_size=self._train_val_set_size, random_state=self._seed)
             train_periods, __ = train_test_split(train_periods, train_size=self._train_val_set_size, random_state=self._seed)
 
-        self._train_dataset = FolsomForecastingDataset(
+        self._train_dataset = self._dataset_class(
             data_root=self._data_root,
             periods=train_periods,
             transforms=self._augmentations if self._augment else self._transforms,
@@ -103,7 +118,7 @@ class ForecastingDataModule(LightningDataModule):
             image_mean=self._image_mean,
             image_std=self._image_std,
         )
-        self._val_dataset = FolsomForecastingDataset(
+        self._val_dataset = self._dataset_class(
             data_root=self._data_root,
             periods=val_periods,
             transforms=self._transforms,
@@ -115,7 +130,7 @@ class ForecastingDataModule(LightningDataModule):
             image_mean=self._image_mean,
             image_std=self._image_std,
         )
-        self._test_dataset = FolsomForecastingDataset(
+        self._test_dataset = self._dataset_class(
             data_root=self._data_root,
             periods=test_periods,
             transforms=self._transforms,

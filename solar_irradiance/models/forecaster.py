@@ -19,6 +19,7 @@ class Forecaster(pl.LightningModule):
     ) -> None:
         super().__init__()
 
+        self._model_name = model_name
         self._lr = lr
         self._lr_patience = lr_patience
 
@@ -72,13 +73,72 @@ class Forecaster(pl.LightningModule):
 
             self.network = XceptionImageEncoder(in_channels=input_channels)
             self.num_features = 128
+        elif model_name == "mercier_vit":
+            from solar_irradiance.models.architectures.mercier_vit import MercierViT
 
-        self.num_features += 4  # Add 4 historical irradiances
-        self.network_head = torch.nn.Sequential(
-            torch.nn.Linear(self.num_features, 256),
-            torch.nn.ReLU(inplace=False),
-            torch.nn.Linear(256, 1),
-        )
+            numeric_input_size = 4  # 4 historical irradiances
+            network_encoder = timm.create_model(
+                "deit_tiny_patch16_224",
+                num_classes=0,  # remove classifier nn.Linear
+                pretrained=pretrained,
+                in_chans=input_channels,
+                img_size=128,
+            )
+            self.network = MercierViT(
+                inmodel=network_encoder,
+                numeric_input_size=numeric_input_size,
+                number_of_linear_layers=1,
+                drop_out_lin=0.1,
+                intermediate_linear_layer_shape=512,
+                linear_activation_func="SiLU",
+                sigmoid_on=False,
+                y_shape=(1,),
+            )
+        elif model_name == "jonathan_attention_cnn":
+            from solar_irradiance.models.architectures.jonathan_attention_cnn import AttentionCNN
+
+            self.network = AttentionCNN(
+                in_channels=input_channels,
+                num_classes=1,  # feature dimension before head
+            )
+        elif model_name == "ansong_kalisi_cnn_lstm":
+            from solar_irradiance.models.architectures.ansong_kalisi_cnn_lstm import KALiSI
+
+            image_input_dim = (input_channels, 128, 128)
+            numeric_input_size = 5
+            self.network = KALiSI(image_input_dim, numeric_input_size)
+        elif model_name == "zang_model":
+            from solar_irradiance.models.architectures.zang_model import ZangModel
+
+            self.network = ZangModel(
+                img_c=input_channels,
+                img_h=128,
+                img_w=128,
+                forecast_horizon=1,
+                fused_channels=64,
+                tcn_channels=[32, 32, 64],
+                attn_dim=64,
+                val_dim=32,
+            )
+        elif model_name == "hendrikx_lstm":
+            from solar_irradiance.models.architectures.hendrikx_lstm import LSTMPredictor
+
+            input_features = 9  # Number of features per time step (irradiance, brightness, ...)
+            self.network = LSTMPredictor(input_features=input_features)
+
+        if model_name not in [
+            "zang_model",
+            "mercier_vit",
+            "jonathan_attention_cnn",
+            "ansong_kalisi_cnn_lstm",
+            "hendrikx_lstm",
+        ]:
+            self.num_features += 4  # Add 4 historical irradiances
+            self.network_head = torch.nn.Sequential(
+                torch.nn.Linear(self.num_features, 256),
+                torch.nn.ReLU(inplace=False),
+                torch.nn.Linear(256, 1),
+            )
 
         if loss_function == "MSE":
             self.loss = torch.nn.MSELoss()
@@ -112,14 +172,33 @@ class Forecaster(pl.LightningModule):
     def optimizer_zero_grad(self, epoch: int, batch_idx: int, optimizer: Optimizer) -> None:
         optimizer.zero_grad(set_to_none=True)
 
-    def forward(self, x: torch.Tensor, irradiance_history: torch.Tensor) -> torch.Tensor:
-        x = self.network(x)
-        x = self.network_head(torch.cat([x, irradiance_history], dim=1))
+    def forward(self, x: torch.Tensor, irradiance_history: torch.Tensor, optical_flows: torch.Tensor) -> torch.Tensor:
+        if self._model_name in ["mercier_vit", "jonathan_attention_cnn", "ansong_kalisi_cnn_lstm"]:
+            x = self.network(x, irradiance_history)
+        elif self._model_name == "hendrikx_lstm":
+            x = self.network(x)
+        elif self._model_name == "zang_model":
+            x = self.network(x, optical_flows, irradiance_history)
+        else:
+            x = self.network(x)
+            x = self.network_head(torch.cat([x, irradiance_history], dim=1))
         return x
 
-    def training_step(self, batch: torch.Tensor, batch_idx: int) -> torch.Tensor | None:
-        source_images, source_irradiances, target_irradiances = batch
-        predicted_irradiances = self.forward(source_images, source_irradiances)
+    def _forward_with_batch(self, batch) -> tuple[torch.Tensor, torch.Tensor]:
+        if self._model_name == "zang_model":
+            source_images, optical_flows, source_irradiances, target_irradiances = batch
+            predicted_irradiances = self.forward(source_images, source_irradiances, optical_flows)
+        elif self._model_name == "hendrikx_lstm":
+            features_list, target_irradiances = batch
+            predicted_irradiances = self.forward(features_list, None, None)
+        else:
+            source_images, source_irradiances, target_irradiances = batch
+            predicted_irradiances = self.forward(source_images, source_irradiances, None)
+
+        return predicted_irradiances, target_irradiances
+
+    def training_step(self, batch: tuple[torch.Tensor, ...], batch_idx: int) -> torch.Tensor | None:
+        predicted_irradiances, target_irradiances = self._forward_with_batch(batch)
 
         loss = self.loss(predicted_irradiances, target_irradiances)
         if torch.isinf(loss):
@@ -131,9 +210,8 @@ class Forecaster(pl.LightningModule):
 
         return loss
 
-    def validation_step(self, batch: torch.Tensor, batch_idx: int) -> None:
-        source_images, source_irradiances, target_irradiances = batch
-        predicted_irradiances = self.forward(source_images, source_irradiances)
+    def validation_step(self, batch: tuple[torch.Tensor, ...], batch_idx: int) -> None:
+        predicted_irradiances, target_irradiances = self._forward_with_batch(batch)
 
         loss = self.loss(predicted_irradiances, target_irradiances)
 
@@ -141,9 +219,8 @@ class Forecaster(pl.LightningModule):
         self.val_metrics.update(predicted_irradiances, target_irradiances)
         self.log_dict(self.val_metrics, sync_dist=True)
 
-    def test_step(self, batch: torch.Tensor, batch_idx: int) -> None:
-        source_images, source_irradiances, target_irradiances = batch
-        predicted_irradiances = self.forward(source_images, source_irradiances)
+    def test_step(self, batch: tuple[torch.Tensor, ...], batch_idx: int) -> None:
+        predicted_irradiances, target_irradiances = self._forward_with_batch(batch)
 
         loss = self.loss(predicted_irradiances, target_irradiances)
 

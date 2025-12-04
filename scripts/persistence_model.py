@@ -16,7 +16,7 @@ MAX_IRRADIANCE = 1466.0  # max irradiance in the dataset
     type=click.Path(exists=True, file_okay=True, path_type=Path),
     default="data/prepared/periods.pickle",
 )
-def evaluate_persistent_model(periods_path: Path):
+def evaluate_persistence_model(periods_path: Path):
     with periods_path.open("rb") as f:
         periods = pd.read_pickle(f)
 
@@ -29,10 +29,10 @@ def evaluate_persistent_model(periods_path: Path):
         source_irradiances = []
 
         for history_item in p["history"]:
-            irradiance = history_item["irradiance"] / MAX_IRRADIANCE
+            irradiance = history_item["irradiance"]
             source_irradiances.append(irradiance)
 
-        target_irradiance = p["target_irradiance"] / MAX_IRRADIANCE
+        target_irradiance = p["target_irradiance"]
 
         target.append(target_irradiance)
         preds.append(source_irradiances[-1])
@@ -45,10 +45,10 @@ def evaluate_persistent_model(periods_path: Path):
     mse = mean_squared_error(preds, target)
     rmse = mean_squared_error(preds, target, squared=False)
     print(f"MAPE [%]: {mape*100:.2f}")
-    print(f"MAE [W/m^2]: {mae*MAX_IRRADIANCE}")
+    print(f"MAE [W/m^2]: {mae}")
     print(f"MSE (normalized): {mse}")
-    print(f"RMSE [W/m^2]: {rmse*MAX_IRRADIANCE}")
+    print(f"RMSE [W/m^2]: {rmse}")
 
 
 if __name__ == "__main__":
-    evaluate_persistent_model()
+    evaluate_persistence_model()

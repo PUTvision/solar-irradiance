@@ -1,0 +1,186 @@
+"""
+Anto Leoba Jonathan, Dongsheng Cai, Chiagoziem C. Ukwuoma, Nkou Joseph Junior Nkou, Qi Huang, Olusola Bamisile
+A radiant shift: Attention-embedded CNNs for accurate solar irradiance forecasting and prediction from sky images
+https://doi.org/10.1016/j.renene.2024.121133
+"""
+
+import torch
+import torch.nn as nn
+
+
+class ChannelAttention(nn.Module):
+    """Channel-Wise Attention component."""
+
+    def __init__(self, in_channels: int, reduction_ratio: int = 16) -> None:
+        """
+        Initializes the ChannelAttention module.
+
+        Parameters
+        ----------
+        in_channels : int
+            Number of input channels.
+        reduction_ratio : int, optional
+            Factor by which to reduce the channels in the bottleneck (hidden) layer.
+            Article doesn't specify, so applied default one, 16.
+        """
+        super().__init__()
+        self.avg_pool = nn.AdaptiveAvgPool2d(1)
+
+        # Calculate the number of channels in the hidden layer
+        hidden_channels = max(1, in_channels // reduction_ratio)
+
+        self.fc = nn.Sequential(
+            # Squeeze: 1x1 Conv
+            nn.Conv2d(in_channels, hidden_channels, kernel_size=1, bias=False),
+            nn.ReLU(inplace=True),
+            # Excite: 1x1 Conv
+            nn.Conv2d(hidden_channels, in_channels, kernel_size=1, bias=False),
+            nn.ReLU(inplace=True),
+            nn.Sigmoid(),
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Forward pass for the attention mechanism.
+
+        Parameters
+        ----------
+        x : torch.Tensor
+            Input feature map. Shape (B, C, H, W).
+
+        Returns
+        -------
+        torch.Tensor
+            Attended feature map. Shape (B, C, H, W).
+        """
+        b, c, _, _ = x.size()
+
+        # Squeeze: Global Average Pooling
+        y = self.avg_pool(x)
+
+        # Excitation: Pass through FC layers (implemented as 1x1 Convs)
+        y = self.fc(y)
+
+        # Scale the original input 'x' by the attention weights 'y'
+        return x * y.expand_as(x)
+
+
+class AttentionCNN(nn.Module):
+    """
+    Attention-embedded Convolutional Neural Network (AttentionCNN).
+
+    This model consists of 5 CNN blocks followed by a Channel-Wise Attention layer and a final regressor head.
+    """
+
+    def __init__(self, in_channels: int, num_classes: int, attention_channels: int = 512) -> None:
+        """
+        Initializes the AttentionCNN model.
+
+        Parameters
+        ----------
+        in_channels : int
+            Number of input channels. As per the paper, this is (sequence_length * 3) for RGB images. E.g., for a sequence of 4 images, in_channels = 12.
+        num_classes : int
+            Number of output regression targets. As per the paper, this is 3 (GHI, DNI, DHI).
+        attention_channels : int, optional
+            Number of channels in the attention layer. Default is 512.
+        """
+        super().__init__()
+
+        # --- CNN Component ---
+        # Block 1: in_channels -> 32
+        self.block1 = self._make_block(in_channels, 32)
+
+        # Block 2: 32 -> 64
+        self.block2 = self._make_block(32, 64)
+
+        # Block 3: 64 -> 128
+        self.block3 = self._make_block(64, 128)
+
+        # Block 4: 128 -> 256
+        self.block4 = self._make_block(128, 256)
+
+        # Block 5: 256 -> attention_channels
+        self.block5 = self._make_block(256, attention_channels)
+
+        # --- Attention Mechanism ---
+        self.attention = ChannelAttention(in_channels=attention_channels)
+
+        # --- Regressor Head ---
+
+        # Calculate the flattened feature size after 5 max-pooling layers.
+        # Assuming 128x128 input image:
+        # 128 -> 64 (pool1) -> 32 (pool2) -> 16 (pool3) -> 8 (pool4) -> 4 (pool5)
+        flat_features = attention_channels * 4 * 4
+
+        # We infer the hidden size of the dense layer (e.g., 1024 or 4096)
+        # as it's not specified in the diagram. Let's use 1024.
+        hidden_dim = 1024
+
+        # Add 4 for historical irradiance values that will be concatenated
+        self.regressor = nn.Sequential(
+            nn.Dropout(p=0.5),
+            nn.Linear(flat_features + 4, hidden_dim),
+            nn.ReLU(inplace=True),
+            nn.Dropout(p=0.5),
+            nn.Linear(hidden_dim, num_classes),  # 3 outputs (GHI, DNI, DHI)
+        )
+
+    @staticmethod
+    def _make_block(in_channels: int, out_channels: int) -> nn.Sequential:
+        """
+        Helper function to create one CNN block.
+        (Conv -> ReLU -> Conv -> ReLU -> MaxPool)
+
+        Parameters
+        ----------
+        in_channels : int
+            Number of input channels.
+        out_channels : int
+            Number of output channels.
+
+        Returns
+        -------
+        nn.Sequential
+            A sequential container with the CNN block layers.
+        """
+        return nn.Sequential(
+            nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+        )
+
+    def forward(self, x: torch.Tensor, irradiance_history: torch.Tensor) -> torch.Tensor:
+        """
+        Forward pass for the AttentionCNN model.
+
+        Parameters
+        ----------
+        x : torch.Tensor
+            Input tensor. Shape (B, sequence_length * 3, 128, 128).
+        irradiance_history : torch.Tensor
+            Historical irradiance values. Shape (B, 4).
+
+        Returns
+        -------
+        torch.Tensor
+            Model output.
+        """
+        # Pass through the 5 CNN blocks
+        x = self.block1(x)
+        x = self.block2(x)
+        x = self.block3(x)
+        x = self.block4(x)
+        x = self.block5(x)
+
+        # Apply channel-wise attention
+        x = self.attention(x)
+
+        x = torch.flatten(x, start_dim=1)
+
+        # Pass through the regressor head
+        x = self.regressor(torch.cat([x, irradiance_history], dim=1))
+
+        return x
