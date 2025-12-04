@@ -193,14 +193,14 @@ class TemporalStreamConvLSTM(nn.Module):
         self.project = nn.Conv2d(hidden_dims[-1], out_channels, kernel_size=1)
 
     def forward(self, x):
-        b, t, c, h, w = x.shape
+        b, time_steps, c, h, w = x.shape
 
         # Downsample optical flow to match spatial stream output (128->64->32)
-        x_flat = x.view(b * t, c, h, w)
+        x_flat = x.view(b * time_steps, c, h, w)
         x_down = self.downsample(x_flat)  # 128 -> 64
         x_down = self.downsample(x_down)  # 64 -> 32
         _, _, h_down, w_down = x_down.shape
-        x = x_down.view(b, t, c, h_down, w_down)
+        x = x_down.view(b, time_steps, c, h_down, w_down)
 
         h, w = h_down, w_down
 
@@ -211,7 +211,7 @@ class TemporalStreamConvLSTM(nn.Module):
 
         layer_outputs = []  # To store the output sequence of the last layer
 
-        for t_step in range(t):
+        for t_step in range(time_steps):
             x_t = x[:, t_step, :, :, :]
 
             for layer_idx in range(self.num_layers):
@@ -228,10 +228,10 @@ class TemporalStreamConvLSTM(nn.Module):
         # Project the output
         # Need to reshape for 1x1 Conv
         _, _, c_hidden, h_out, w_out = out.shape
-        out_flat = out.view(b * t, self.hidden_dims[-1], h_out, w_out)
+        out_flat = out.view(b * time_steps, self.hidden_dims[-1], h_out, w_out)
         out_proj = self.project(out_flat)
         _, c_out, h_final, w_final = out_proj.shape
-        out = out_proj.view(b, t, c_out, h_final, w_final)
+        out = out_proj.view(b, time_steps, c_out, h_final, w_final)
 
         return out
 

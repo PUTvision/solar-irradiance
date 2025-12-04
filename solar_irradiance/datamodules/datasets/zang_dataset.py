@@ -54,6 +54,12 @@ class ZangFolsomForecastingDataset(Dataset):
         -------
         np.array
             Optical flow maps, shape [T, H, W, 2] (float32)
+
+        Notes
+        -----
+        - The first frame (index 0) has zero flow (all values are zero).
+        - For each subsequent frame at index j (j > 0), the flow is computed relative to the previous frame (j-1).
+        - The last dimension of size 2 contains the horizontal (x) and vertical (y) flow components, respectively.
         """
         t, h, w, c = image_sequence_np.shape
         flow_maps = np.zeros((t, h, w, 2), dtype=np.float32)
