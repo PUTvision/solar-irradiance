@@ -72,94 +72,85 @@ class FolsomForecastingDataset(Dataset):
 
         if self._cloud_mask_method is not None:
             self._cloud_mask = CloudMask(shape=self._image_size, method=cloud_mask_method)
-            
+
     def detect_sun_in_image(self, rgb_image, red_threshold=240):
         """
         Detects the sun's position based on a red channel threshold.
         doi: 10.1109/IGARSS.2016.7730949
         """
         # --- 1. Isolate the Red Channel ---
-        R = rgb_image[:, :, 0] # Assumes RGB order (R=0, G=1, B=2)
+        red_channel = rgb_image[:, :, 0]
 
         # --- 2. Apply Thresholding ---
         # Create a binary mask where Red > threshold
-        ret, sun_mask = cv2.threshold(R, red_threshold, 255, cv2.THRESH_BINARY)
-        
-        # --- 3. Find the Largest Area (Contour) ---
-        contours, _ = cv2.findContours(
-            sun_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
+        ret, sun_mask = cv2.threshold(red_channel, red_threshold, 255, cv2.THRESH_BINARY)
 
-        if not contours:
-            # Sun is obscured or not bright enough
-            return False
-        return True
-    
+        # --- 3. Find the Largest Area (Contour) ---
+        contours, _ = cv2.findContours(sun_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        # Return True if contours are found, False otherwise
+        return bool(contours)
+
     def calculate_cloud_cover(self, rgb_image, fixed_thresh_value=128):
         """
         Calculates the cloud cover based on the provided flowchart.
         https://doi.org/10.1016/j.solener.2025.113516
-        
+
         Returns:
             float: The calculated cloud cover.
         """
-        
+
         # --- 1. Pre-processing ---
         # Convert RGB to grayscale
         gray_image_8bit = cv2.cvtColor(rgb_image, cv2.COLOR_RGB2GRAY)
-        
+
         # Normalize image to [0.0, 1.0] for intensity check
         normalized_image = gray_image_8bit / 255.0
-        
+
         # Get total number of pixels for CC calculation
         total_pixels = gray_image_8bit.size
-        
+
         # --- 2. Detect sun in image ---
         sun_present = self.detect_sun_in_image(rgb_image)
-            
+
         # --- 3. Sun in image? (Decision) ---
         if not sun_present:
             # Fixed thresholding: Pixel < threshold = cloud
             # We use THRESH_BINARY_INV, which makes pixels *below* the
             # threshold white (255), and pixels above it black (0).
-            ret, binary_image = cv2.threshold(
-                gray_image_8bit, fixed_thresh_value, 255, cv2.THRESH_BINARY_INV
-            )
-            
+            ret, binary_image = cv2.threshold(gray_image_8bit, fixed_thresh_value, 255, cv2.THRESH_BINARY_INV)
+
             # Count white pixels (255), which represent clouds
             num_cloud_pixels = np.count_nonzero(binary_image)
-            
+
         else:
             # Average (Avg.) pixel intensity
             avg_intensity = np.mean(normalized_image)
-            
+
             # --- 4. Avg. intensity > 0.51? (Decision) ---
             if avg_intensity <= 0.51:
                 # Identified as clear sky
                 num_cloud_pixels = 0
-                
+
             else:
                 # Otsu adaptive thresholding
                 # white pixels (255) = sky, black pixel (0) = cloud
-                
+
                 # cv2.THRESH_OTSU finds the optimal threshold.
                 # cv2.THRESH_BINARY applies it:
                 #   - Pixels above threshold become 255 (white)
                 #   - Pixels below threshold become 0 (black)
                 # This matches the flowchart's logic (white=sky, black=cloud).
-                ret_otsu, otsu_image = cv2.threshold(
-                    gray_image_8bit, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU
-                )
-                
+                ret_otsu, otsu_image = cv2.threshold(gray_image_8bit, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
                 # We need to count the black pixels (clouds)
                 # This is total pixels minus white pixels (sky)
                 num_sky_pixels = np.count_nonzero(otsu_image)
                 num_cloud_pixels = total_pixels - num_sky_pixels
 
         # --- 5. Calculate cloud cover (CC) ---
-        cloud_cover = (num_cloud_pixels / total_pixels)
+        cloud_cover = num_cloud_pixels / total_pixels
         return cloud_cover
-
 
     def __getitem__(self, index: int) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         period = self._periods[index]

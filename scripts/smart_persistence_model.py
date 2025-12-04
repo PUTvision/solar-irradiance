@@ -6,8 +6,6 @@ import torch
 from torchmetrics.functional.regression import mean_absolute_error, mean_absolute_percentage_error, mean_squared_error
 from tqdm import tqdm
 
-MAX_IRRADIANCE = 1466.0  # max irradiance in the dataset
-
 
 @click.command()
 @click.option(
@@ -65,7 +63,6 @@ def evaluate_smart_persistence_model(periods_path: Path, clear_sky_path: Path, f
             kc_last = min(max(kc_last, 0.0), 2.0)  # clamp to [0, 2]
 
             # Predict target irradiance using smart persistence
-            # (assume clear sky index persists, multiply by target clear sky)
             pred_irradiance = kc_last * target_clear_sky
         else:
             # Fallback to naive persistence if clear sky data is missing

@@ -3,6 +3,7 @@ Haixiang Zang, Dianhao Chen, Jingxuan Liu, Lilin Cheng, Guoqiang Sun, Zhinong We
 Improving ultra-short-term photovoltaic power forecasting using a novel sky-image-based framework considering spatial-temporal feature interaction
 https://doi.org/10.1016/j.energy.2024.130538
 """
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F

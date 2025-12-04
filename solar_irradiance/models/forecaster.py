@@ -127,7 +127,13 @@ class Forecaster(pl.LightningModule):
             input_features = 9  # Number of historical images
             self.network = LSTMPredictor(input_features=input_features)
 
-        if model_name not in ["zang_model", "mercier_vit", "jonathan_attention_cnn", "ansong_kalisi_cnn_lstm", "hendrikx_lstm"]:
+        if model_name not in [
+            "zang_model",
+            "mercier_vit",
+            "jonathan_attention_cnn",
+            "ansong_kalisi_cnn_lstm",
+            "hendrikx_lstm",
+        ]:
             self.num_features += 4  # Add 4 historical irradiances
             self.network_head = torch.nn.Sequential(
                 torch.nn.Linear(self.num_features, 256),

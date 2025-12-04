@@ -60,17 +60,19 @@ class FolsomForecastingDataset(Dataset):
             image_name = history_item["image_name"]
 
             row = self._features_df.loc[image_name]
-            features_list.append([
-                row["irradiance"],
-                row["brightness"],
-                row["cloud_pixels"],
-                row["edge_count"],
-                row["corner_count"],
-                row["csi"],
-                row["zenith"],
-                row["azimuth"],
-                row["apparent_elevation"],
-            ])
+            features_list.append(
+                [
+                    row["irradiance"],
+                    row["brightness"],
+                    row["cloud_pixels"],
+                    row["edge_count"],
+                    row["corner_count"],
+                    row["csi"],
+                    row["zenith"],
+                    row["azimuth"],
+                    row["apparent_elevation"],
+                ]
+            )
 
         target_irradiance = period["target_irradiance"]  # / MAX_IRRADIANCE
 
@@ -78,4 +80,3 @@ class FolsomForecastingDataset(Dataset):
 
     def __len__(self) -> int:
         return len(self._periods)
-
