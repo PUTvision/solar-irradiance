@@ -8,8 +8,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-# --- 1. Helper Modules (Building Blocks) ---
-
 
 class ConvLSTMCell(nn.Module):
     """
@@ -120,7 +118,7 @@ class TemporalBlock(nn.Module):
         return self.relu(out + res)
 
 
-# --- 2. Core Model Components ---
+# --- Core Model Components ---
 
 
 class SpatialStreamCNN(nn.Module):
@@ -443,20 +441,17 @@ class ProgressiveTCN(nn.Module):
         return out
 
 
-# --- 3. Main Model Class ---
+# --- Main Model ---
 
 
 class ZangModel(nn.Module):
-    """
-    The complete, combined model. (Fig. 1)
-    """
+    """The complete, combined model."""
 
     def __init__(
         self,
         img_c,
         img_h,
         img_w,
-        seq_len,
         forecast_horizon,
         fused_channels=64,
         tcn_channels=(32, 32, 32),
@@ -496,19 +491,30 @@ class ZangModel(nn.Module):
             irradiance_dim=1, image_dim=val_dim, tcn_channels=tcn_channels, kernel_size=3, forecast_horizon=forecast_horizon
         )
 
-    def _get_feat_size(self, h, w):
-        # Calculate output size of spatial stream
-        # 2x MaxPool with stride 2
+    @staticmethod
+    def _get_feat_size(h, w):
+        """Utility to calculate the output spatial size after the spatial stream CNN (2x MaxPool with stride 2)."""
         return h // 4, w // 4
 
-    def forward(self, image_sequence, optical_flow, irradiance_history):
+    def forward(
+        self, image_sequence: torch.Tensor, optical_flow: torch.Tensor, irradiance_history: torch.Tensor
+    ) -> torch.Tensor:
         """
         Full forward pass of the model.
 
-        Args:
-            image_sequence (torch.Tensor): (B, T, C, H, W)
-            optical_flow (torch.Tensor): (B, T, 2, H, W)
-            irradiance_history (torch.Tensor): (B, T)
+        Parameters
+        ----------
+        image_sequence : torch.Tensor
+            Shape (B, T, C, H, W)
+        optical_flow : torch.Tensor
+            Shape (B, T, 2, H, W)
+        irradiance_history : torch.Tensor
+            Shape (B, T)
+
+        Returns
+        -------
+        torch.Tensor
+            Forecast output of shape (B, forecast_horizon)
         """
         # Ensure irradiance has channel dim
         irradiance_history = irradiance_history.unsqueeze(-1)  # (B, T, 1)

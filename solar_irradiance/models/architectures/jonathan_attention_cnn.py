@@ -126,7 +126,8 @@ class AttentionCNN(nn.Module):
             nn.Linear(hidden_dim, num_classes),  # 3 outputs (GHI, DNI, DHI)
         )
 
-    def _make_block(self, in_channels: int, out_channels: int) -> nn.Sequential:
+    @staticmethod
+    def _make_block(in_channels: int, out_channels: int) -> nn.Sequential:
         """
         Helper function to create one CNN block.
         (Conv -> ReLU -> Conv -> ReLU -> MaxPool)
@@ -183,61 +184,3 @@ class AttentionCNN(nn.Module):
         x = self.regressor(torch.cat([x, irradiance_history], dim=1))
 
         return x
-
-
-# --- Example Usage ---
-if __name__ == "__main__":
-    # --- Model Configuration based on the paper ---
-    # Paper uses sequence lengths of 1, 2, 4, or 8. Let's use 1.
-    sequence_length = 1
-
-    # Each image is RGB (3 channels)
-    image_channels = 3
-
-    # Total input channels = sequence_length * image_channels
-    # This assumes images are stacked on the channel dimension.
-    input_channels = sequence_length * image_channels
-
-    # Output is 3 values (GHI, DNI, DHI)
-    num_outputs = 1
-
-    # Image size is 128x128
-    img_size = 128
-
-    # Batch size (e.g., 2)
-    batch_size = 2
-
-    # 1. Instantiate the model
-    print("Initializing AttentionCNN model with:")
-    print(f"  Sequence Length: {sequence_length}")
-    print(f"  Input Channels: {input_channels}")
-    print(f"  Output Classes: {num_outputs}\n")
-
-    model = AttentionCNN(in_channels=input_channels, num_classes=num_outputs)
-
-    # 2. Create a dummy input tensor
-    # Shape: (batch_size, input_channels, height, width)
-    dummy_input = torch.randn(batch_size, input_channels, img_size, img_size)
-
-    print(f"Created a dummy input tensor of shape: {dummy_input.shape}")
-
-    # 3. Perform a forward pass
-    try:
-        output = model(dummy_input)
-        print("Successfully performed a forward pass.")
-        print(f"Output tensor shape: {output.shape}")
-
-        # 4. Verify the output shape
-        assert output.shape == (batch_size, num_outputs)
-        print("Output shape is correct (Batch Size, Num Classes).")
-
-        print("\n--- Model Architecture ---")
-        print(model)
-
-        total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-        print(f"\nTotal trainable parameters: {total_params:,}")
-
-    except Exception as e:
-        print("\nAn error occurred during the forward pass:")
-        print(e)
-        print("Please check the model architecture and input dimensions.")

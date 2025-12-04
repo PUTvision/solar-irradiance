@@ -15,15 +15,15 @@ import torch.nn.functional as F
 class KALiSI(nn.Module):
     def __init__(
         self,
-        image_input_dim,
-        numeric_input_dim,
-        num_filters=24,
-        kernel_size=(3, 3),
-        pool_size=(2, 2),
-        strides=2,
-        lstm_units=32,
-        dense_size=1024,
-        drop_rate=0.4,
+        image_input_dim: tuple[int, int, int],
+        numeric_input_size: int,
+        num_filters: int = 24,
+        kernel_size: tuple[int, int] = (3, 3),
+        pool_size: tuple[int, int] = (2, 2),
+        strides: int = 2,
+        lstm_units: int = 32,
+        dense_size: int = 1024,
+        drop_rate: float = 0.4,
     ) -> None:
         super().__init__()
 
@@ -45,7 +45,7 @@ class KALiSI(nn.Module):
         self.cnn_output_size = self._get_conv_output_dim()
 
         # --- Combined Branch ---
-        self.combined_features_dim = self.cnn_output_size + numeric_input_dim
+        self.combined_features_dim = self.cnn_output_size + numeric_input_size
 
         # --- Reduce dimensions before LSTM to prevent exploding gradient issues ---
         self.fc_reduce = nn.Linear(self.combined_features_dim, dense_size)
@@ -105,8 +105,4 @@ class KALiSI(nn.Module):
         x = self.dropout1(x)
         x = F.relu(self.fc2(x))
         x = self.dropout2(x)
-
-        # --- Output Layer ---
-        y_out = self.fc_out(x)
-
-        return y_out
+        return self.fc_out(x)

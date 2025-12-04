@@ -25,18 +25,12 @@ class LSTMPredictor(nn.Module):
         super().__init__()
 
         # --- LSTM Layers ---
-        # Keras: LSTM(50, ..., return_sequences=True)
         self.lstm1 = nn.LSTM(input_size=input_features, hidden_size=hidden_size1, batch_first=True)
-
-        # Keras: LSTM(25, ...) (return_sequences=False by default)
         self.lstm2 = nn.LSTM(input_size=hidden_size1, hidden_size=hidden_size2, batch_first=True)
 
         # --- Dense (Fully-Connected) Layers ---
-        # Keras: Dense(10, activation='relu')
         self.fc1 = nn.Linear(in_features=hidden_size2, out_features=dense_hidden)
         self.relu = nn.ReLU()
-
-        # Keras: Dense(1) - The final output layer
         self.fc_out = nn.Linear(in_features=dense_hidden, out_features=1)
 
     def forward(self, x):
@@ -46,18 +40,13 @@ class LSTMPredictor(nn.Module):
         lstm_out = torch.relu(lstm_out)
 
         # --- LSTM 2 (return_sequences=False) ---
-        # We take the output from the *last* time step.
         _, (h_n, c_n) = self.lstm2(lstm_out)
 
         # h_n shape is (num_layers, batch_size, hidden_size2)
-        # We take the last layer's hidden state.
         last_hidden_state = h_n.squeeze(0)  # Shape: (batch_size, hidden_size2)
         last_hidden_state = torch.relu(last_hidden_state)
 
         # --- Dense Layers ---
         x = self.fc1(last_hidden_state)
         x = self.relu(x)
-        x = self.fc_out(x)
-
-        # Final output shape: (batch_size, 1)
-        return x
+        return self.fc_out(x)

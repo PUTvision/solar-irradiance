@@ -103,8 +103,8 @@ class Forecaster(pl.LightningModule):
             from solar_irradiance.models.architectures.ansong_kalisi_cnn_lstm import KALiSI
 
             image_input_dim = (input_channels, 128, 128)
-            numeric_input_dim = 5
-            self.network = KALiSI(image_input_dim, numeric_input_dim)
+            numeric_input_size = 5
+            self.network = KALiSI(image_input_dim, numeric_input_size)
         elif model_name == "zang_model":
             from solar_irradiance.models.architectures.zang_model import ZangModel
 
@@ -112,7 +112,6 @@ class Forecaster(pl.LightningModule):
                 img_c=input_channels,
                 img_h=128,
                 img_w=128,
-                seq_len=4,
                 forecast_horizon=1,
                 fused_channels=64,
                 tcn_channels=[32, 32, 64],
