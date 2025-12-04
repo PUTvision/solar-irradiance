@@ -30,7 +30,6 @@ train_forecaster:
   export:
     export_to_onnx: False
     opset: 17
-    use_simplifier: False
 
   #### TRAINER ####
   trainer:

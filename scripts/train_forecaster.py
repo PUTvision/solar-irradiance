@@ -9,7 +9,6 @@ from lightning.pytorch.callbacks import EarlyStopping, LearningRateMonitor, Mode
 from lightning.pytorch.loggers import NeptuneLogger
 from lightning.pytorch.strategies import DDPStrategy
 from omegaconf import OmegaConf
-import onnx
 import torch
 from torch.distributed.algorithms.ddp_comm_hooks import default_hooks as default
 
@@ -129,8 +128,7 @@ def train_forecaster(data_root: Path, periods_filename: str):
 
     if cfg.export.export_to_onnx:
         opset = cfg.export.opset
-        use_simplifier = cfg.export.use_simplifier
-        log.info(f"Exporting model to onnx with parameters: opset={opset}, use_simplifier={use_simplifier}")
+        log.info(f"Exporting model to onnx with opset={opset}")
 
         model.eval()
         input_data = next(iter(datamodule.test_dataloader()))
@@ -150,14 +148,6 @@ def train_forecaster(data_root: Path, periods_filename: str):
             output_names=["output"],
             do_constant_folding=False,
         )
-
-        if use_simplifier:
-            from onnxsim import simplify
-
-            model = onnx.load("model.onnx")
-            model_simp, check = simplify(model)
-            assert check, "Simplified ONNX model could not be validated"
-            onnx.save(model_simp, "model.onnx")
 
 
 if __name__ == "__main__":

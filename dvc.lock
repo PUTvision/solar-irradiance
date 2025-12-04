@@ -76,7 +76,6 @@ stages:
           export:
             export_to_onnx: false
             opset: 15
-            use_simplifier: false
           trainer:
             devices: 1
             precision: 32

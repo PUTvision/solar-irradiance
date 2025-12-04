@@ -156,7 +156,7 @@ class HendrikxFeatureComputer:
 
         if output_path:
             output_path = Path(output_path)
-            df.to_csv(output_path)
+            df_normalized.to_csv(output_path)
             print(f"Features saved to {output_path}")
 
         return df_normalized

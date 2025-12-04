@@ -1,9 +1,9 @@
-# Bag of tricks for irradiance forecasting
+# A systematic synthesis of sky image enhancement techniques for ground-based solar irradiance forecasting
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.15792283.svg)](https://doi.org/10.5281/zenodo.15792283)
 
 
-> Bag of tricks for ground-based solar irradiance forecasting using sky images.
+> A systematic synthesis of sky image enhancement techniques for ground-based solar irradiance forecasting.
 
 ## Table of Contents
 * [Overview](#overview)
@@ -70,7 +70,7 @@ Optical flow data generated using DIS method, with ultrafast preset, to enhance 
 </p>
 
 <p align="center">
-Visualisation of utilised cloud channel methods. For illustration purposes, the output masks were thresholded with hand-picked values to produce binary masks. (a) input image; (b) red-blue ratio (R2B); (c) red-blue difference (R-B); (d) normalised blue-red ratio (Norm. B/R).
+Visualization of utilized cloud channel methods. For illustration purposes, the output masks were thresholded with hand-picked values to produce binary masks. (a) input image; (b) red-blue ratio (R2B); (c) red-blue difference (R-B); (d) normalized blue-red ratio (Norm. B/R).
 </p>
 
 </details>
