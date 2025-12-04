@@ -422,7 +422,7 @@ class ProgressiveTCN(nn.Module):
         x = irradiance.transpose(1, 2)
         x = self.irradiance_proj(x)
 
-        for tcn, fusion in zip(self.tcn_blocks, self.fusion_blocks, strict=False):
+        for tcn, fusion in zip(self.tcn_blocks, self.fusion_blocks, strict=True):
             # 1. Pass through TCN block
             x_hidden = tcn(x)  # (B, C_tcn, T)
 

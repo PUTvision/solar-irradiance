@@ -30,7 +30,7 @@ def evaluate_smart_persistence_model(periods_path: Path, clear_sky_path: Path, f
     # Load clear sky data
     clear_sky_df = pd.read_csv(clear_sky_path)
     clear_sky_df["datetime"] = pd.to_datetime(clear_sky_df["datetime"], utc=False)
-    clear_sky_dict = dict(zip(clear_sky_df["datetime"], clear_sky_df["ghi_clear"], strict=False))
+    clear_sky_dict = dict(zip(clear_sky_df["datetime"], clear_sky_df["ghi_clear"], strict=True))
 
     with periods_path.open("rb") as f:
         periods = pd.read_pickle(f)

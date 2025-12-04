@@ -95,7 +95,7 @@ class KALiSI(nn.Module):
         # --- LSTM ---
         # lstm_out shape: (Batch, Seq_Len, hidden_size)
         # h_n shape: (num_layers, Batch, hidden_size)
-        lstm_out, (h_n, c_n) = self.lstm(x_seq)
+        _, (h_n, _) = self.lstm(x_seq)
 
         # Get the hidden state from the last layer
         x_lstm = h_n[-1]  # Shape: (Batch, lstm_units)
