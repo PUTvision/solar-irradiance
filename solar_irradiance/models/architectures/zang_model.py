@@ -292,8 +292,8 @@ class GateUnit(nn.Module):
 class IrradianceGuidedAttention(nn.Module):
     """
     Implements the PV-guided (Irradiance-guided) Attention. (Section 2.2)
-    This is interpreted as an attention mechanism where Q (query) comes
-    from irradiance and K (key)/V (value) come from the fused feature map.
+    This is interpreted as an attention mechanism where query (Q) comes
+    from irradiance and key (K) / value (V) come from the fused feature map.
     This condenses the spatial-temporal features into a 1D time series.
     """
 
@@ -301,10 +301,10 @@ class IrradianceGuidedAttention(nn.Module):
         super().__init__()
         self.attn_dim = attn_dim
 
-        # W_q: Projects irradiance (Q)
+        # W_q: Projects irradiance (query)
         self.W_q = nn.Linear(irradiance_dim, attn_dim)
 
-        # W_k, W_v: 1x1 Convs for feature map (K, V)
+        # W_k, W_v: 1x1 Convs for feature map (key, value)
         self.W_k = nn.Conv2d(feature_channels, attn_dim, kernel_size=1)
         self.W_v = nn.Conv2d(feature_channels, val_dim, kernel_size=1)
 
@@ -313,30 +313,30 @@ class IrradianceGuidedAttention(nn.Module):
         # irradiance: (B, T, 1)
         b, t, c, h, w = fused_features.shape
 
-        # 1. Get Q
-        Q = self.W_q(irradiance)  # (B, T, attn_dim)
-        Q = Q.unsqueeze(-2)  # (B, T, 1, attn_dim)
+        # 1. Get query
+        query = self.W_q(irradiance)  # (B, T, attn_dim)
+        query = query.unsqueeze(-2)  # (B, T, 1, attn_dim)
 
         # Reshape features for 1x1 conv
         feat_flat = fused_features.view(b * t, c, h, w)
 
-        # 2. Get K
-        K = self.W_k(feat_flat)  # (B*T, attn_dim, H, W)
-        K = K.view(b, t, self.attn_dim, h * w)  # (B, T, attn_dim, H*W)
+        # 2. Get key
+        key = self.W_k(feat_flat)  # (B*T, attn_dim, H, W)
+        key = key.view(b, t, self.attn_dim, h * w)  # (B, T, attn_dim, H*W)
 
-        # 3. Get V
-        V = self.W_v(feat_flat)  # (B*T, val_dim, H, W)
-        V = V.view(b, t, -1, h * w)  # (B, T, val_dim, H*W)
+        # 3. Get value
+        value = self.W_v(feat_flat)  # (B*T, val_dim, H, W)
+        value = value.view(b, t, -1, h * w)  # (B, T, val_dim, H*W)
 
         # 4. Attention scores (Eq. 5)
         # (B, T, 1, attn_dim) @ (B, T, attn_dim, H*W) -> (B, T, 1, H*W)
-        attn_scores = torch.matmul(Q, K) / (self.attn_dim**0.5)
+        attn_scores = torch.matmul(query, key) / (self.attn_dim**0.5)
         attn_weights = F.softmax(attn_scores, dim=-1)  # (B, T, 1, H*W)
 
-        # 5. Apply weights to V
+        # 5. Apply weights to value
         # (B, T, 1, H*W) @ (B, T, H*W, val_dim) -> (B, T, 1, val_dim)
-        # Note the transpose on V
-        out = torch.matmul(attn_weights, V.transpose(-1, -2))
+        # Note the transpose on value
+        out = torch.matmul(attn_weights, value.transpose(-1, -2))
 
         # Squeeze to get the final "Processed Feature"
         out = out.squeeze(-2)  # (B, T, val_dim)
