@@ -228,6 +228,10 @@ class Forecaster(pl.LightningModule):
         self.test_metrics.update(predicted_irradiances, target_irradiances)
         self.log_dict(self.test_metrics, sync_dist=True)
 
+    def predict_step(self, batch: tuple[torch.Tensor, ...], batch_idx: int) -> torch.Tensor:
+        predicted_irradiances, target_irradiances = self._forward_with_batch(batch)
+        return predicted_irradiances, target_irradiances
+
     def configure_optimizers(self) -> dict:
         optimizer = torch.optim.AdamW(self.parameters(), lr=self._lr)
         reduce_lr_on_plateau = torch.optim.lr_scheduler.ReduceLROnPlateau(
