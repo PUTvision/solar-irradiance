@@ -228,7 +228,7 @@ class Forecaster(pl.LightningModule):
         self.test_metrics.update(predicted_irradiances, target_irradiances)
         self.log_dict(self.test_metrics, sync_dist=True)
 
-    def predict_step(self, batch: tuple[torch.Tensor, ...], batch_idx: int) -> torch.Tensor:
+    def predict_step(self, batch: tuple[torch.Tensor, ...], batch_idx: int) -> tuple[torch.Tensor, torch.Tensor]:
         predicted_irradiances, target_irradiances = self._forward_with_batch(batch)
         return predicted_irradiances, target_irradiances
 
