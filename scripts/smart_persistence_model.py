@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import click
+import numpy as np
 import pandas as pd
 import torch
 from torchmetrics.functional.regression import mean_absolute_error, mean_absolute_percentage_error, mean_squared_error
@@ -94,8 +95,6 @@ def evaluate_smart_persistence_model(periods_path: Path, clear_sky_path: Path, f
     if save:
         output_path = Path(f"./smart_persistence_{forecasting_horizon}min.npy")
         with output_path.open("wb") as f:
-            import numpy as np
-
             np.save(f, preds.numpy())
 
 
