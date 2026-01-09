@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import click
+import numpy as np
 import pandas as pd
 import torch
 from torchmetrics.functional.regression import mean_absolute_error, mean_absolute_percentage_error, mean_squared_error
@@ -26,7 +27,8 @@ from tqdm import tqdm
     type=int,
     default=15,
 )
-def evaluate_smart_persistence_model(periods_path: Path, clear_sky_path: Path, forecasting_horizon: int):
+@click.option("--save", is_flag=True, help="Whether to save the predictions to a file")
+def evaluate_smart_persistence_model(periods_path: Path, clear_sky_path: Path, forecasting_horizon: int, save: bool):
     # Load clear sky data
     clear_sky_df = pd.read_csv(clear_sky_path)
     clear_sky_df["datetime"] = pd.to_datetime(clear_sky_df["datetime"], utc=False)
@@ -89,6 +91,11 @@ def evaluate_smart_persistence_model(periods_path: Path, clear_sky_path: Path, f
     print(f"MAE [W/m^2]: {mae}")
     print(f"MSE (normalized): {mse}")
     print(f"RMSE [W/m^2]: {rmse}")
+
+    if save:
+        output_path = Path(f"./smart_persistence_{forecasting_horizon}min.npy")
+        with output_path.open("wb") as f:
+            np.save(f, preds.numpy())
 
 
 if __name__ == "__main__":
