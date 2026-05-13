@@ -12,6 +12,7 @@
 * [Dataset](#dataset)
 * [Usage](#usage)
 * [Results](#results)
+* [Citation](#citation)
 
 ## Overview
 
@@ -181,3 +182,18 @@ python -m scripts.evaluate \
      <img src=".images/qualitative_comparison_21_06_2014.png">
      <img src=".images/qualitative_comparison_04_08_2014.png">
 </p>
+
+## Citation
+
+```console
+@article{PIECHOCKI2026127533,
+title = {A systematic synthesis of sky image enhancement techniques for ground-based solar irradiance forecasting},
+journal = {Applied Energy},
+volume = {410},
+pages = {127533},
+year = {2026},
+issn = {0306-2619},
+doi = {https://doi.org/10.1016/j.apenergy.2026.127533},
+author = {Mateusz Piechocki and Marek Kraft},
+}
+```
